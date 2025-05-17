@@ -8,12 +8,15 @@ import {
   Sparkles,
   Target,
   Trophy,
+  FolderOpen,
+  StickyNote,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import AddCourseModal from "./components/AddCourseModal";
 import CourseScanner from "./components/CourseScanner";
 import Link from "next/link";
 import ModuleControls from "./components/ModuleControls";
+import NotesModal from "./components/NotesModal";
 
 interface Video {
   name: string;
@@ -39,6 +42,7 @@ interface Course {
   sections: Section[];
   currentSection: number;
   currentVideo: number;
+  notes?: string;
 }
 
 const dummyCourses: Course[] = [
@@ -127,6 +131,9 @@ const dummyCourses: Course[] = [
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [showScanner, setShowScanner] = useState(false);
+  const [selectedCourseForNotes, setSelectedCourseForNotes] =
+    useState<Course | null>(null);
 
   useEffect(() => {
     // Initialize with dummy data if no courses exist
@@ -251,6 +258,16 @@ export default function Home() {
     });
   };
 
+  const handleSaveNotes = (courseId: string, notes: string) => {
+    setCourses((prevCourses) => {
+      const updatedCourses = prevCourses.map((course) =>
+        course.id === courseId ? { ...course, notes } : course
+      );
+      localStorage.setItem("courses", JSON.stringify(updatedCourses));
+      return updatedCourses;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="container mx-auto px-4 py-12">
@@ -336,22 +353,31 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Course Scanner */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Scan Local Course
-          </h2>
-          <CourseScanner onAddCourse={handleAddCourse} />
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-4 mb-8">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+          >
+            <Plus size={20} />
+            Add New Course
+          </button>
+
+          <button
+            onClick={() => setShowScanner(!showScanner)}
+            className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+          >
+            <FolderOpen size={20} />
+            {showScanner ? "Hide Scanner" : "Scan Local Course"}
+          </button>
         </div>
 
-        {/* Add New Course Button */}
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="mb-8 flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-        >
-          <Plus size={20} />
-          Add New Course
-        </button>
+        {/* Course Scanner */}
+        {showScanner && (
+          <div className="mb-12">
+            <CourseScanner onAddCourse={handleAddCourse} />
+          </div>
+        )}
 
         {/* Course Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -408,10 +434,24 @@ export default function Home() {
                 </div>
               </Link>
 
-              <div className="mt-6 text-sm">
-                <p className="text-gray-600 dark:text-gray-300 mb-2">
-                  Course Progress:
-                </p>
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">
+                    Course Progress:
+                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setSelectedCourseForNotes(course);
+                    }}
+                    className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  >
+                    <StickyNote size={18} />
+                    <span className="text-sm">
+                      {course.notes ? "View Notes" : "Add Notes"}
+                    </span>
+                  </button>
+                </div>
                 <ModuleControls
                   sections={course.sections}
                   currentSection={course.currentSection}
@@ -451,6 +491,14 @@ export default function Home() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddCourse}
+      />
+
+      <NotesModal
+        isOpen={!!selectedCourseForNotes}
+        onClose={() => setSelectedCourseForNotes(null)}
+        courseId={selectedCourseForNotes?.id || ""}
+        initialNotes={selectedCourseForNotes?.notes}
+        onSave={handleSaveNotes}
       />
     </div>
   );

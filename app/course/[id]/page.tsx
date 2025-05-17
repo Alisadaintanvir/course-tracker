@@ -1,9 +1,11 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { BookOpen, Clock, ChevronLeft } from "lucide-react";
-import ModuleControls from "../../components/ModuleControls";
+import { BookOpen, Clock, ChevronLeft, StickyNote } from "lucide-react";
+import Link from "next/link";
+import ModuleControls from "@/app/components/ModuleControls";
+import NotesModal from "@/app/components/NotesModal";
 
 interface Video {
   name: string;
@@ -29,32 +31,83 @@ interface Course {
   sections: Section[];
   currentSection: number;
   currentVideo: number;
+  notes?: string;
 }
 
-export default function CourseDetails() {
+export default function CoursePage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const [course, setCourse] = useState<Course | null>(null);
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+  const viewNotes = searchParams.get("view") === "notes";
 
   useEffect(() => {
-    // Get course data from localStorage
-    const courses = JSON.parse(localStorage.getItem("courses") || "[]");
-    const courseData = courses.find((c: any) => c.id === params.id);
-    if (courseData) {
-      // Convert string dates back to Date objects
-      const processedCourse = {
-        ...courseData,
-        lastAccessed: new Date(courseData.lastAccessed),
-        sections: courseData.sections.map((section: any) => ({
+    const storedCourses = localStorage.getItem("courses");
+    if (storedCourses) {
+      const courses = JSON.parse(storedCourses).map((course: any) => ({
+        ...course,
+        lastAccessed: new Date(course.lastAccessed),
+        sections: course.sections.map((section: any) => ({
           ...section,
           modules: section.modules.map((module: any) => ({
             ...module,
             lastModified: new Date(module.lastModified),
           })),
         })),
-      } as Course;
-      setCourse(processedCourse);
+      }));
+      const foundCourse = courses.find((c: Course) => c.id === params.id);
+      if (foundCourse) {
+        setCourse(foundCourse);
+        if (viewNotes) {
+          setIsNotesModalOpen(true);
+        }
+      }
     }
-  }, [params.id]);
+  }, [params.id, viewNotes]);
+
+  const handleSectionChange = (newSection: number) => {
+    if (!course) return;
+    const updatedCourse = {
+      ...course,
+      currentSection: newSection,
+      currentVideo: 0,
+      lastAccessed: new Date(),
+    };
+    setCourse(updatedCourse);
+    updateLocalStorage(updatedCourse);
+  };
+
+  const handleVideoChange = (newVideo: number) => {
+    if (!course) return;
+    const updatedCourse = {
+      ...course,
+      currentVideo: newVideo,
+      lastAccessed: new Date(),
+    };
+    setCourse(updatedCourse);
+    updateLocalStorage(updatedCourse);
+  };
+
+  const handleSaveNotes = (notes: string) => {
+    if (!course) return;
+    const updatedCourse = {
+      ...course,
+      notes,
+    };
+    setCourse(updatedCourse);
+    updateLocalStorage(updatedCourse);
+  };
+
+  const updateLocalStorage = (updatedCourse: Course) => {
+    const storedCourses = localStorage.getItem("courses");
+    if (storedCourses) {
+      const courses = JSON.parse(storedCourses);
+      const updatedCourses = courses.map((c: Course) =>
+        c.id === updatedCourse.id ? updatedCourse : c
+      );
+      localStorage.setItem("courses", JSON.stringify(updatedCourses));
+    }
+  };
 
   if (!course) {
     return (
@@ -64,6 +117,13 @@ export default function CourseDetails() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Course not found
             </h1>
+            <Link
+              href="/"
+              className="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
+              <ChevronLeft size={20} />
+              Back to Courses
+            </Link>
           </div>
         </div>
       </div>
@@ -87,102 +147,114 @@ export default function CourseDetails() {
     return Math.round((completedVideos / totalVideos) * 100);
   };
 
-  const handleSectionChange = (newSection: number) => {
-    setCourse((prev) => {
-      if (!prev) return prev;
-      const updated = {
-        ...prev,
-        currentSection: newSection,
-        currentVideo: 0,
-        lastAccessed: new Date(),
-      };
-      // Update localStorage
-      const courses = JSON.parse(localStorage.getItem("courses") || "[]");
-      const updatedCourses = courses.map((c: any) =>
-        c.id === course.id ? updated : c
-      );
-      localStorage.setItem("courses", JSON.stringify(updatedCourses));
-      return updated;
-    });
-  };
-
-  const handleVideoChange = (newVideo: number) => {
-    setCourse((prev) => {
-      if (!prev) return prev;
-      const updated = {
-        ...prev,
-        currentVideo: newVideo,
-        lastAccessed: new Date(),
-      };
-      // Update localStorage
-      const courses = JSON.parse(localStorage.getItem("courses") || "[]");
-      const updatedCourses = courses.map((c: any) =>
-        c.id === course.id ? updated : c
-      );
-      localStorage.setItem("courses", JSON.stringify(updatedCourses));
-      return updated;
-    });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="container mx-auto px-4 py-12">
-        {/* Back Button */}
-        <button
-          onClick={() => window.history.back()}
-          className="mb-8 flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-        >
-          <ChevronLeft size={20} />
-          Back to Courses
-        </button>
-
-        {/* Course Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm mb-8">
-          <div className="flex items-start gap-6">
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-xl">
-              <BookOpen className="text-white" size={32} />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        {/* Header */}
+        <div className="mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4"
+          >
+            <ChevronLeft size={20} />
+            Back to Courses
+          </Link>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 {course.title}
               </h1>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">
+              <p className="text-gray-600 dark:text-gray-300 mt-2">
                 {course.description}
               </p>
-              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                <div className="flex items-center gap-2">
-                  <Clock size={16} />
-                  <span>
-                    Last accessed: {course.lastAccessed.toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>Category: {course.category}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="mt-8">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600 dark:text-gray-300">Progress</span>
-              <span className="text-gray-900 dark:text-white font-medium">
-                {getProgress(course)}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-              <div
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-300"
-                style={{ width: `${getProgress(course)}%` }}
-              ></div>
             </div>
           </div>
         </div>
 
-        {/* Course Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+        {/* Course Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+                <BookOpen
+                  className="text-blue-600 dark:text-blue-400"
+                  size={24}
+                />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Category
+                </p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {course.category}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-lg">
+                <Clock
+                  className="text-purple-600 dark:text-purple-400"
+                  size={24}
+                />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Last Accessed
+                </p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {new Date(course.lastAccessed).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Notes Section */}
+        <div className="mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="bg-indigo-100 dark:bg-indigo-900 p-3 rounded-lg">
+                <StickyNote
+                  className="text-indigo-600 dark:text-indigo-400"
+                  size={24}
+                />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Course Notes
+                  </h2>
+                  <button
+                    onClick={() => setIsNotesModalOpen(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                  >
+                    <StickyNote size={16} />
+                    {course.notes ? "Edit Notes" : "Add Notes"}
+                  </button>
+                </div>
+                {course.notes ? (
+                  <div className="prose dark:prose-invert max-w-none">
+                    <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                      {course.notes}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 italic">
+                    No notes yet. Click the button above to add notes for this
+                    course.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Module Controls */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
             Course Content
           </h2>
           <ModuleControls
@@ -194,6 +266,14 @@ export default function CourseDetails() {
           />
         </div>
       </div>
+
+      <NotesModal
+        isOpen={isNotesModalOpen}
+        onClose={() => setIsNotesModalOpen(false)}
+        courseId={course.id}
+        initialNotes={course.notes}
+        onSave={handleSaveNotes}
+      />
     </div>
   );
 }
