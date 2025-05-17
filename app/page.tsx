@@ -1,50 +1,14 @@
 "use client";
 
-import {
-  BookOpen,
-  Clock,
-  Plus,
-  Sparkles,
-  Target,
-  Trophy,
-  FolderOpen,
-  StickyNote,
-  Trash2,
-} from "lucide-react";
+import { Plus, Sparkles, FolderOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 import AddCourseModal from "./components/AddCourseModal";
 import CourseScanner from "./components/CourseScanner";
-import Link from "next/link";
-import ModuleControls from "./components/ModuleControls";
 import NotesModal from "./components/NotesModal";
 import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
-
-interface Video {
-  name: string;
-  path: string;
-  size: number;
-  lastModified: Date;
-}
-
-interface Section {
-  name: string;
-  path: string;
-  modules: Video[];
-}
-
-interface Course {
-  id: string;
-  title: string;
-  category: string;
-  description: string;
-  totalModules: number;
-  currentModule: number;
-  lastAccessed: Date;
-  sections: Section[];
-  currentSection: number;
-  currentVideo: number;
-  notes?: string;
-}
+import Stats from "./components/Stats";
+import CourseCard from "./components/CourseCard";
+import { Course } from "./types/course";
 
 const dummyCourses: Course[] = [
   {
@@ -138,27 +102,22 @@ export default function Home() {
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
   useEffect(() => {
-    // Initialize with dummy data if no courses exist
     const storedCourses = localStorage.getItem("courses");
     if (!storedCourses) {
       localStorage.setItem("courses", JSON.stringify(dummyCourses));
       setCourses(dummyCourses);
     } else {
-      // Parse stored courses and convert dates
-      const parsedCourses = JSON.parse(storedCourses).map((course: any) => {
-        const processedCourse = {
-          ...course,
-          lastAccessed: new Date(course.lastAccessed),
-          sections: course.sections.map((section: any) => ({
-            ...section,
-            modules: section.modules.map((module: any) => ({
-              ...module,
-              lastModified: new Date(module.lastModified),
-            })),
+      const parsedCourses = JSON.parse(storedCourses).map((course: Course) => ({
+        ...course,
+        lastAccessed: new Date(course.lastAccessed),
+        sections: course.sections.map((section) => ({
+          ...section,
+          modules: section.modules.map((module) => ({
+            ...module,
+            lastModified: new Date(module.lastModified),
           })),
-        };
-        return processedCourse as Course;
-      });
+        })),
+      }));
       setCourses(parsedCourses);
     }
   }, []);
@@ -173,14 +132,11 @@ export default function Home() {
       | "currentVideo"
     >
   ) => {
-    // Check if a course with the same title already exists
     const isDuplicate = courses.some(
       (course) => course.title.toLowerCase() === courseData.title.toLowerCase()
     );
 
-    if (isDuplicate) {
-      return false;
-    }
+    if (isDuplicate) return false;
 
     const newCourse: Course = {
       ...courseData,
@@ -198,24 +154,15 @@ export default function Home() {
 
   const getProgress = (course: Course) => {
     if (!course.sections.length) return 0;
-
-    // Calculate total videos across all sections
     const totalVideos = course.sections.reduce(
       (total, section) => total + section.modules.length,
       0
     );
-
-    // Calculate completed videos
     let completedVideos = 0;
-
-    // Count videos in completed sections
     for (let i = 0; i < course.currentSection; i++) {
       completedVideos += course.sections[i].modules.length;
     }
-
-    // Add videos from current section
     completedVideos += course.currentVideo;
-
     return Math.round((completedVideos / totalVideos) * 100);
   };
 
@@ -282,13 +229,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div>
       <div className="container mx-auto px-4 py-12">
-        {/* Header with Stats */}
+        {/* Header */}
         <div className="mb-12">
           <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="text-yellow-500" size={24} />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <Sparkles className="text-pink-500 dark:text-pink-400" size={24} />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 dark:from-pink-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
               My Learning Journey
             </h1>
           </div>
@@ -296,87 +243,14 @@ export default function Home() {
             Track your progress across all courses
           </p>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-4">
-                <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-xl">
-                  <BookOpen
-                    className="text-blue-600 dark:text-blue-400"
-                    size={24}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Active Courses
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {courses.length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-4">
-                <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-xl">
-                  <Target
-                    className="text-purple-600 dark:text-purple-400"
-                    size={24}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Completion Rate
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {courses.length === 0 ? (
-                      <span className="text-gray-400 dark:text-gray-500">
-                        -
-                      </span>
-                    ) : (
-                      Math.round(
-                        courses.reduce(
-                          (acc, course) => acc + getProgress(course),
-                          0
-                        ) / courses.length
-                      )
-                    )}
-                    {courses.length > 0 && "%"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 dark:border-gray-700">
-              <div className="flex items-center gap-4">
-                <div className="bg-yellow-100 dark:bg-yellow-900 p-3 rounded-xl">
-                  <Trophy
-                    className="text-yellow-600 dark:text-yellow-400"
-                    size={24}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Completed
-                  </p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {
-                      courses.filter((course) => getProgress(course) === 100)
-                        .length
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Stats courses={courses} getProgress={getProgress} />
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 mb-8">
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
             <Plus size={20} />
             Add New Course
@@ -384,7 +258,7 @@ export default function Home() {
 
           <button
             onClick={() => setShowScanner(!showScanner)}
-            className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
             <FolderOpen size={20} />
             {showScanner ? "Hide Scanner" : "Scan Local Course"}
@@ -401,109 +275,31 @@ export default function Home() {
         {/* Course Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {courses.map((course) => (
-            <div
+            <CourseCard
               key={course.id}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 dark:border-gray-700 transform hover:-translate-y-1"
-            >
-              <div className="flex items-start justify-between">
-                <Link href={`/course/${course.id}`} className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl">
-                      <BookOpen className="text-white" size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                        {course.title}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {course.category}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-                <button
-                  onClick={() => setCourseToDelete(course)}
-                  className="p-2 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 transition-colors"
-                  title="Delete Course"
-                >
-                  <Trash2 size={20} />
-                </button>
-              </div>
-
-              <Link href={`/course/${course.id}`}>
-                <div className="mt-6">
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <Clock size={16} />
-                    <span>
-                      Last accessed: {getTimeAgo(course.lastAccessed)}
-                    </span>
-                  </div>
-
-                  <div className="mt-6">
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-600 dark:text-gray-300">
-                        Progress
-                      </span>
-                      <span className="text-gray-900 dark:text-white font-medium">
-                        {getProgress(course)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                      <div
-                        className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-300"
-                        style={{ width: `${getProgress(course)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-
-              <div className="mt-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-gray-600 dark:text-gray-300 text-sm">
-                    Course Progress:
-                  </p>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setSelectedCourseForNotes(course);
-                    }}
-                    className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                  >
-                    <StickyNote size={18} />
-                    <span className="text-sm">
-                      {course.notes ? "View Notes" : "Add Notes"}
-                    </span>
-                  </button>
-                </div>
-                <ModuleControls
-                  sections={course.sections}
-                  currentSection={course.currentSection}
-                  onSectionChange={(newSection) =>
-                    handleSectionChange(course.id, newSection)
-                  }
-                  currentVideo={course.currentVideo}
-                  onVideoChange={(newVideo) =>
-                    handleVideoChange(course.id, newVideo)
-                  }
-                />
-              </div>
-            </div>
+              course={course}
+              getProgress={getProgress}
+              getTimeAgo={getTimeAgo}
+              onDelete={setCourseToDelete}
+              onNotesClick={setSelectedCourseForNotes}
+              onSectionChange={handleSectionChange}
+              onVideoChange={handleVideoChange}
+            />
           ))}
 
           {/* Add Course Card */}
           <div
             onClick={() => setIsModalOpen(true)}
-            className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-6 flex items-center justify-center hover:border-indigo-500 dark:hover:border-indigo-500 transition-all duration-300 cursor-pointer group"
+            className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-6 flex items-center justify-center hover:border-pink-500 dark:hover:border-pink-500 transition-all duration-300 cursor-pointer group bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm"
           >
             <div className="text-center flex flex-col items-center justify-center">
-              <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-full mb-3 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 transition-colors flex items-center justify-center">
+              <div className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/20 dark:to-purple-900/20 p-4 rounded-full mb-3 group-hover:from-pink-200 dark:group-hover:from-pink-800/30 group-hover:to-purple-200 dark:group-hover:to-purple-800/30 transition-colors flex items-center justify-center">
                 <Plus
-                  className="text-gray-400 dark:text-gray-500 group-hover:text-indigo-500 dark:group-hover:text-indigo-400"
+                  className="text-pink-600 dark:text-pink-400 group-hover:text-pink-700 dark:group-hover:text-pink-300"
                   size={32}
                 />
               </div>
-              <p className="text-gray-600 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <p className="text-gray-600 dark:text-gray-400 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                 Add another course
               </p>
             </div>

@@ -8,8 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Course Tracker",
-  description:
-    "A simple course tracker for those who can't afford enrolling in courses and want to learn from the comfort of their home.",
+  description: "Track your learning progress across all courses",
 };
 
 export default function RootLayout({
@@ -19,10 +18,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body
+        className={`${inter.className} min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-slate-950 dark:via-purple-900/40 dark:to-indigo-900/40`}
+      >
         <ThemeProvider>
-          {children}
-          <ThemeToggle />
+          <div className="relative">
+            {children}
+            <div className="fixed bottom-6 right-6 z-50">
+              <ThemeToggle />
+            </div>
+          </div>
         </ThemeProvider>
       </body>
     </html>
