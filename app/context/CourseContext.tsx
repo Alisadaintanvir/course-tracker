@@ -15,6 +15,7 @@ interface CourseContextType {
   addCourse: (course: Course) => void;
   deleteCourse: (courseId: string) => void;
   getCourse: (courseId: string) => Course | undefined;
+  toggleCourseCompletion: (courseId: string) => void;
 }
 
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
@@ -29,6 +30,9 @@ export function CourseProvider({ children }: { children: ReactNode }) {
       const parsedCourses = JSON.parse(storedCourses).map((course: any) => ({
         ...course,
         lastAccessed: new Date(course.lastAccessed),
+        completedAt: course.completedAt
+          ? new Date(course.completedAt)
+          : undefined,
         sections: course.sections.map((section: any) => ({
           ...section,
           modules: section.modules.map((module: any) => ({
@@ -73,9 +77,32 @@ export function CourseProvider({ children }: { children: ReactNode }) {
     return courses.find((course) => course.id === courseId);
   };
 
+  const toggleCourseCompletion = (courseId: string) => {
+    setCourses((prevCourses) =>
+      prevCourses.map((course) => {
+        if (course.id === courseId) {
+          const isCompleted = !course.isCompleted;
+          return {
+            ...course,
+            isCompleted,
+            completedAt: isCompleted ? new Date() : undefined,
+          };
+        }
+        return course;
+      })
+    );
+  };
+
   return (
     <CourseContext.Provider
-      value={{ courses, updateCourse, addCourse, deleteCourse, getCourse }}
+      value={{
+        courses,
+        updateCourse,
+        addCourse,
+        deleteCourse,
+        getCourse,
+        toggleCourseCompletion,
+      }}
     >
       {children}
     </CourseContext.Provider>

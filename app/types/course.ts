@@ -33,4 +33,6 @@ export interface Course {
   notes?: string;
   isActive?: boolean;
   completionHistory?: CompletionRecord[];
+  isCompleted: boolean;
+  completedAt?: Date;
 }

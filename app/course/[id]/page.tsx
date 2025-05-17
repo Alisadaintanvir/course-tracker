@@ -9,6 +9,7 @@ import {
   StickyNote,
   History,
   ChevronDown,
+  CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
 import NotesModal from "@/app/components/NotesModal";
@@ -41,6 +42,8 @@ interface Course {
   currentVideo: number;
   notes?: string;
   completionHistory?: CompletionRecord[];
+  isCompleted: boolean;
+  completedAt?: Date;
 }
 
 interface CompletionRecord {
@@ -54,7 +57,7 @@ interface CompletionRecord {
 export default function CoursePage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const { getCourse, updateCourse } = useCourse();
+  const { getCourse, updateCourse, toggleCourseCompletion } = useCourse();
   const [course, setCourse] = useState<Course | null>(null);
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -190,12 +193,32 @@ export default function CoursePage() {
         </Link>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {course.title}
-            </h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                {course.title}
+              </h1>
+              <button
+                onClick={() => toggleCourseCompletion(course.id)}
+                className={`p-2 rounded-full transition-colors ${
+                  course.isCompleted
+                    ? "text-green-500 hover:text-green-600 dark:text-green-400 dark:hover:text-green-300"
+                    : "text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                }`}
+                title={
+                  course.isCompleted ? "Mark as incomplete" : "Mark as complete"
+                }
+              >
+                <CheckCircle2 size={24} />
+              </button>
+            </div>
             <p className="text-gray-600 dark:text-gray-300 mt-2">
               {course.description}
             </p>
+            {course.isCompleted && course.completedAt && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Completed on {new Date(course.completedAt).toLocaleDateString()}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -242,22 +265,38 @@ export default function CoursePage() {
 
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="bg-indigo-100 dark:bg-indigo-900 p-3 rounded-lg">
+            <div
+              className={`p-3 rounded-lg ${
+                course.isCompleted
+                  ? "bg-green-100 dark:bg-green-900"
+                  : "bg-indigo-100 dark:bg-indigo-900"
+              }`}
+            >
               <History
-                className="text-indigo-600 dark:text-indigo-400"
+                className={
+                  course.isCompleted
+                    ? "text-green-600 dark:text-green-400"
+                    : "text-indigo-600 dark:text-indigo-400"
+                }
                 size={24}
               />
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Completed Modules
+                {course.isCompleted ? "Completion Status" : "Completed Modules"}
               </p>
-              <button
-                onClick={() => setIsHistoryModalOpen(true)}
-                className="text-lg font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
-              >
-                {course.completionHistory?.length || 0} modules
-              </button>
+              {course.isCompleted ? (
+                <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  Completed
+                </p>
+              ) : (
+                <button
+                  onClick={() => setIsHistoryModalOpen(true)}
+                  className="text-lg font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                >
+                  {course.completionHistory?.length || 0} modules
+                </button>
+              )}
             </div>
           </div>
         </div>
