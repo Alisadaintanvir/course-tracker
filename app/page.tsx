@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Sparkles, FolderOpen } from "lucide-react";
+import { Plus, Sparkles, FolderOpen, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import AddCourseModal from "./components/AddCourseModal";
 import CourseScanner from "./components/CourseScanner";
@@ -100,6 +100,7 @@ export default function Home() {
   const [selectedCourseForNotes, setSelectedCourseForNotes] =
     useState<Course | null>(null);
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
+  const [showActiveOnly, setShowActiveOnly] = useState(false);
 
   useEffect(() => {
     const storedCourses = localStorage.getItem("courses");
@@ -228,6 +229,22 @@ export default function Home() {
     setCourseToDelete(null);
   };
 
+  const handleToggleActive = (courseId: string) => {
+    setCourses((prevCourses) => {
+      const updatedCourses = prevCourses.map((course) =>
+        course.id === courseId
+          ? { ...course, isActive: !course.isActive }
+          : course
+      );
+      localStorage.setItem("courses", JSON.stringify(updatedCourses));
+      return updatedCourses;
+    });
+  };
+
+  const filteredCourses = showActiveOnly
+    ? courses.filter((course) => course.isActive)
+    : courses;
+
   return (
     <div>
       <div className="container mx-auto px-4 py-12">
@@ -263,6 +280,18 @@ export default function Home() {
             <FolderOpen size={20} />
             {showScanner ? "Hide Scanner" : "Scan Local Course"}
           </button>
+
+          <button
+            onClick={() => setShowActiveOnly(!showActiveOnly)}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${
+              showActiveOnly
+                ? "bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white"
+                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            }`}
+          >
+            <Star size={20} className={showActiveOnly ? "fill-current" : ""} />
+            {showActiveOnly ? "Show All Courses" : "Show Active Courses"}
+          </button>
         </div>
 
         {/* Course Scanner */}
@@ -274,7 +303,7 @@ export default function Home() {
 
         {/* Course Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course) => (
+          {filteredCourses.map((course) => (
             <CourseCard
               key={course.id}
               course={course}
@@ -284,6 +313,7 @@ export default function Home() {
               onNotesClick={setSelectedCourseForNotes}
               onSectionChange={handleSectionChange}
               onVideoChange={handleVideoChange}
+              onToggleActive={handleToggleActive}
             />
           ))}
 

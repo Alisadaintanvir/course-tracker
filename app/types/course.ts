@@ -23,4 +23,5 @@ export interface Course {
   currentSection: number;
   currentVideo: number;
   notes?: string;
+  isActive?: boolean;
 }
