@@ -9,9 +9,24 @@ import {
   Target,
   Trophy,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AddCourseModal from "./components/AddCourseModal";
 import CourseScanner from "./components/CourseScanner";
+import Link from "next/link";
+import ModuleControls from "./components/ModuleControls";
+
+interface Video {
+  name: string;
+  path: string;
+  size: number;
+  lastModified: Date;
+}
+
+interface Section {
+  name: string;
+  path: string;
+  modules: Video[];
+}
 
 interface Course {
   id: string;
@@ -21,24 +36,133 @@ interface Course {
   totalModules: number;
   currentModule: number;
   lastAccessed: Date;
+  sections: Section[];
+  currentSection: number;
+  currentVideo: number;
 }
+
+const dummyCourses: Course[] = [
+  {
+    id: "1",
+    title: "Next.js Masterclass",
+    category: "Web Development",
+    description: "Learn Next.js from scratch to advanced",
+    totalModules: 12,
+    currentModule: 8,
+    lastAccessed: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    sections: [
+      {
+        name: "Getting Started",
+        path: "/courses/nextjs/getting-started",
+        modules: [
+          {
+            name: "Introduction to Next.js",
+            path: "/courses/nextjs/getting-started/intro.mp4",
+            size: 1024000,
+            lastModified: new Date(),
+          },
+          {
+            name: "Setting up your environment",
+            path: "/courses/nextjs/getting-started/setup.mp4",
+            size: 2048000,
+            lastModified: new Date(),
+          },
+        ],
+      },
+      {
+        name: "Core Concepts",
+        path: "/courses/nextjs/core-concepts",
+        modules: [
+          {
+            name: "Routing in Next.js",
+            path: "/courses/nextjs/core-concepts/routing.mp4",
+            size: 3072000,
+            lastModified: new Date(),
+          },
+          {
+            name: "Data Fetching",
+            path: "/courses/nextjs/core-concepts/data-fetching.mp4",
+            size: 4096000,
+            lastModified: new Date(),
+          },
+        ],
+      },
+    ],
+    currentSection: 0,
+    currentVideo: 0,
+  },
+  {
+    id: "2",
+    title: "React Fundamentals",
+    category: "Web Development",
+    description: "Master the basics of React",
+    totalModules: 10,
+    currentModule: 5,
+    lastAccessed: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    sections: [
+      {
+        name: "React Basics",
+        path: "/courses/react/basics",
+        modules: [
+          {
+            name: "Components and Props",
+            path: "/courses/react/basics/components.mp4",
+            size: 1536000,
+            lastModified: new Date(),
+          },
+          {
+            name: "State and Lifecycle",
+            path: "/courses/react/basics/state.mp4",
+            size: 2560000,
+            lastModified: new Date(),
+          },
+        ],
+      },
+    ],
+    currentSection: 0,
+    currentVideo: 0,
+  },
+];
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [courses, setCourses] = useState<Course[]>([
-    {
-      id: "1",
-      title: "Next.js Masterclass",
-      category: "Web Development",
-      description: "Learn Next.js from scratch to advanced",
-      totalModules: 12,
-      currentModule: 8,
-      lastAccessed: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-    },
-  ]);
+  const [courses, setCourses] = useState<Course[]>([]);
+
+  useEffect(() => {
+    // Initialize with dummy data if no courses exist
+    const storedCourses = localStorage.getItem("courses");
+    if (!storedCourses) {
+      localStorage.setItem("courses", JSON.stringify(dummyCourses));
+      setCourses(dummyCourses);
+    } else {
+      // Parse stored courses and convert dates
+      const parsedCourses = JSON.parse(storedCourses).map((course: any) => {
+        const processedCourse = {
+          ...course,
+          lastAccessed: new Date(course.lastAccessed),
+          sections: course.sections.map((section: any) => ({
+            ...section,
+            modules: section.modules.map((module: any) => ({
+              ...module,
+              lastModified: new Date(module.lastModified),
+            })),
+          })),
+        };
+        return processedCourse as Course;
+      });
+      setCourses(parsedCourses);
+    }
+  }, []);
 
   const handleAddCourse = (
-    courseData: Omit<Course, "id" | "currentModule" | "lastAccessed">
+    courseData: Omit<
+      Course,
+      | "id"
+      | "currentModule"
+      | "lastAccessed"
+      | "currentSection"
+      | "currentVideo"
+    >
   ) => {
     // Check if a course with the same title already exists
     const isDuplicate = courses.some(
@@ -46,7 +170,6 @@ export default function Home() {
     );
 
     if (isDuplicate) {
-      // You can show an error message here if you want
       return false;
     }
 
@@ -55,13 +178,36 @@ export default function Home() {
       id: Math.random().toString(36).substr(2, 9),
       currentModule: 1,
       lastAccessed: new Date(),
+      currentSection: 0,
+      currentVideo: 0,
     };
-    setCourses([...courses, newCourse]);
+    const updatedCourses = [...courses, newCourse];
+    setCourses(updatedCourses);
+    localStorage.setItem("courses", JSON.stringify(updatedCourses));
     return true;
   };
 
   const getProgress = (course: Course) => {
-    return Math.round((course.currentModule / course.totalModules) * 100);
+    if (!course.sections.length) return 0;
+
+    // Calculate total videos across all sections
+    const totalVideos = course.sections.reduce(
+      (total, section) => total + section.modules.length,
+      0
+    );
+
+    // Calculate completed videos
+    let completedVideos = 0;
+
+    // Count videos in completed sections
+    for (let i = 0; i < course.currentSection; i++) {
+      completedVideos += course.sections[i].modules.length;
+    }
+
+    // Add videos from current section
+    completedVideos += course.currentVideo;
+
+    return Math.round((completedVideos / totalVideos) * 100);
   };
 
   const getTimeAgo = (date: Date) => {
@@ -70,6 +216,39 @@ export default function Home() {
       (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
     );
     return diffInDays === 0 ? "Today" : `${diffInDays} days ago`;
+  };
+
+  const handleSectionChange = (courseId: string, newSection: number) => {
+    setCourses((prevCourses) => {
+      const updatedCourses = prevCourses.map((course) =>
+        course.id === courseId
+          ? {
+              ...course,
+              currentSection: newSection,
+              currentVideo: 0,
+              lastAccessed: new Date(),
+            }
+          : course
+      );
+      localStorage.setItem("courses", JSON.stringify(updatedCourses));
+      return updatedCourses;
+    });
+  };
+
+  const handleVideoChange = (courseId: string, newVideo: number) => {
+    setCourses((prevCourses) => {
+      const updatedCourses = prevCourses.map((course) =>
+        course.id === courseId
+          ? {
+              ...course,
+              currentVideo: newVideo,
+              lastAccessed: new Date(),
+            }
+          : course
+      );
+      localStorage.setItem("courses", JSON.stringify(updatedCourses));
+      return updatedCourses;
+    });
   };
 
   return (
@@ -181,57 +360,69 @@ export default function Home() {
               key={course.id}
               className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 dark:border-gray-700 transform hover:-translate-y-1"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl">
-                    <BookOpen className="text-white" size={24} />
+              <Link href={`/course/${course.id}`} className="block">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl">
+                      <BookOpen className="text-white" size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+                        {course.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {course.category}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                      {course.title}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {course.category}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                  size={20}
-                />
-              </div>
-
-              <div className="mt-6">
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                  <Clock size={16} />
-                  <span>Last accessed: {getTimeAgo(course.lastAccessed)}</span>
+                  <ChevronRight
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                    size={20}
+                  />
                 </div>
 
                 <div className="mt-6">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-600 dark:text-gray-300">
-                      Progress
-                    </span>
-                    <span className="text-gray-900 dark:text-white font-medium">
-                      {getProgress(course)}%
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                    <Clock size={16} />
+                    <span>
+                      Last accessed: {getTimeAgo(course.lastAccessed)}
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div
-                      className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-300"
-                      style={{ width: `${getProgress(course)}%` }}
-                    ></div>
-                  </div>
-                </div>
 
-                <div className="mt-6 text-sm">
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Current Module:
-                  </p>
-                  <p className="text-gray-900 dark:text-white font-medium">
-                    Module {course.currentModule} of {course.totalModules}
-                  </p>
+                  <div className="mt-6">
+                    <div className="flex justify-between text-sm mb-2">
+                      <span className="text-gray-600 dark:text-gray-300">
+                        Progress
+                      </span>
+                      <span className="text-gray-900 dark:text-white font-medium">
+                        {getProgress(course)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-300"
+                        style={{ width: `${getProgress(course)}%` }}
+                      ></div>
+                    </div>
+                  </div>
                 </div>
+              </Link>
+
+              <div className="mt-6 text-sm">
+                <p className="text-gray-600 dark:text-gray-300 mb-2">
+                  Course Progress:
+                </p>
+                <ModuleControls
+                  sections={course.sections}
+                  currentSection={course.currentSection}
+                  onSectionChange={(newSection) =>
+                    handleSectionChange(course.id, newSection)
+                  }
+                  currentVideo={course.currentVideo}
+                  onVideoChange={(newVideo) =>
+                    handleVideoChange(course.id, newVideo)
+                  }
+                />
               </div>
             </div>
           ))}

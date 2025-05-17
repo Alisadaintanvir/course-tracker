@@ -11,6 +11,20 @@ interface CourseData {
   category: string;
   description: string;
   totalModules: number;
+  sections: Section[];
+}
+
+interface Section {
+  name: string;
+  path: string;
+  modules: Video[];
+}
+
+interface Video {
+  name: string;
+  path: string;
+  size: number;
+  lastModified: Date;
 }
 
 export default function AddCourseModal({
@@ -28,6 +42,7 @@ export default function AddCourseModal({
       category: formData.get("category") as string,
       description: formData.get("description") as string,
       totalModules: parseInt(formData.get("totalModules") as string),
+      sections: [],
     };
     onSubmit(courseData);
     onClose();
