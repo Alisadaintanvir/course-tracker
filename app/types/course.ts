@@ -11,6 +11,14 @@ export interface Section {
   modules: Video[];
 }
 
+export interface CompletionRecord {
+  sectionIndex: number;
+  videoIndex: number;
+  completedAt: Date;
+  moduleName: string;
+  sectionName: string;
+}
+
 export interface Course {
   id: string;
   title: string;
@@ -24,4 +32,5 @@ export interface Course {
   currentVideo: number;
   notes?: string;
   isActive?: boolean;
+  completionHistory?: CompletionRecord[];
 }

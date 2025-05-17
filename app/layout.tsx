@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./components/ThemeProvider";
 import ThemeToggle from "./components/ThemeToggle";
+import { CourseProvider } from "./context/CourseContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,14 +22,16 @@ export default function RootLayout({
       <body
         className={`${inter.className} min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-slate-950 dark:via-purple-900/40 dark:to-indigo-900/40`}
       >
-        <ThemeProvider>
-          <div className="relative">
-            {children}
-            <div className="fixed bottom-6 right-6 z-50">
-              <ThemeToggle />
+        <CourseProvider>
+          <ThemeProvider>
+            <div className="relative">
+              {children}
+              <div className="fixed bottom-6 right-6 z-50">
+                <ThemeToggle />
+              </div>
             </div>
-          </div>
-        </ThemeProvider>
+          </ThemeProvider>
+        </CourseProvider>
       </body>
     </html>
   );
