@@ -154,16 +154,21 @@ export default function Home() {
   };
 
   const getProgress = (course: Course) => {
+    if (course.isCompleted) return 100;
+
     if (!course.sections.length) return 0;
+
     const totalVideos = course.sections.reduce(
-      (total, section) => total + section.modules.length,
+      (total: number, section: Section) => total + section.modules.length,
       0
     );
+
     let completedVideos = 0;
     for (let i = 0; i < course.currentSection; i++) {
       completedVideos += course.sections[i].modules.length;
     }
     completedVideos += course.currentVideo;
+
     return Math.round((completedVideos / totalVideos) * 100);
   };
 

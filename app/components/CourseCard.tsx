@@ -1,8 +1,15 @@
 "use client";
 
-import { BookOpen, Clock, StickyNote, Trash2, Star } from "lucide-react";
+import {
+  BookOpen,
+  Clock,
+  StickyNote,
+  Trash2,
+  Star,
+  CheckCircle2,
+} from "lucide-react";
 import Link from "next/link";
-import { Course } from "@/types/course";
+import { Course } from "@/app/types/course";
 import ModuleControls from "./ModuleControls";
 
 interface CourseCardProps {
@@ -27,17 +34,40 @@ export default function CourseCard({
   onToggleActive,
 }: CourseCardProps) {
   return (
-    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border border-gray-100 dark:border-gray-700 transform hover:-translate-y-1">
+    <div
+      className={`bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border ${
+        course.isCompleted
+          ? "border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/20"
+          : "border-gray-100 dark:border-gray-700"
+      } transform hover:-translate-y-1`}
+    >
       <div className="flex items-start justify-between">
         <Link href={`/course/${course.id}`} className="flex-1">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-pink-500 to-rose-500 p-3 rounded-xl">
-              <BookOpen className="text-white" size={24} />
+            <div
+              className={`p-3 rounded-xl ${
+                course.isCompleted
+                  ? "bg-gradient-to-br from-green-500 to-emerald-500"
+                  : "bg-gradient-to-br from-pink-500 to-rose-500"
+              }`}
+            >
+              {course.isCompleted ? (
+                <CheckCircle2 className="text-white" size={24} />
+              ) : (
+                <BookOpen className="text-white" size={24} />
+              )}
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
-                {course.title}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+                  {course.title}
+                </h3>
+                {course.isCompleted && (
+                  <span className="px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">
+                    Completed
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {course.category}
               </p>
@@ -76,13 +106,23 @@ export default function CourseCard({
           <div className="mt-6">
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-600 dark:text-gray-300">Progress</span>
-              <span className="text-gray-900 dark:text-white font-medium">
+              <span
+                className={`font-medium ${
+                  course.isCompleted
+                    ? "text-green-600 dark:text-green-400"
+                    : "text-gray-900 dark:text-white"
+                }`}
+              >
                 {getProgress(course)}%
               </span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
               <div
-                className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 h-2.5 rounded-full transition-all duration-300"
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  course.isCompleted
+                    ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                    : "bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500"
+                }`}
                 style={{ width: `${getProgress(course)}%` }}
               ></div>
             </div>

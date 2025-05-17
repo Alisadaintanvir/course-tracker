@@ -164,6 +164,8 @@ export default function CoursePage() {
   }
 
   const getProgress = (course: Course) => {
+    if (course.isCompleted) return 100;
+
     if (!course.sections.length) return 0;
 
     const totalVideos = course.sections.reduce(
