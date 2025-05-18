@@ -37,7 +37,8 @@ interface CourseScannerProps {
     description: string;
     totalModules: number;
     sections: Section[];
-  }) => boolean;
+    isCompleted: boolean;
+  }) => Promise<boolean>;
 }
 
 export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
@@ -84,7 +85,7 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
     }
   };
 
-  const handleAddToCourses = () => {
+  const handleAddToCourses = async () => {
     if (!courseStructure) return;
 
     // Calculate total modules from sections
@@ -99,15 +100,20 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
       description: `Course with ${totalModules} videos across ${courseStructure.sections.length} sections`,
       totalModules,
       sections: courseStructure.sections,
+      isCompleted: false,
     };
 
-    const success = onAddCourse(courseData);
-    if (success) {
-      setCoursePath("");
-      setCourseName("");
-      setCourseStructure(null);
-    } else {
-      setError("A course with this name already exists");
+    try {
+      const success = await onAddCourse(courseData);
+      if (success) {
+        setCoursePath("");
+        setCourseName("");
+        setCourseStructure(null);
+      } else {
+        setError("A course with this name already exists");
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to add course");
     }
   };
 

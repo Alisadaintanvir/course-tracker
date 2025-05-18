@@ -12,6 +12,7 @@ interface CourseData {
   description?: string;
   totalModules: number;
   sections: Section[];
+  isCompleted: boolean;
 }
 
 interface Section {
@@ -43,6 +44,7 @@ export default function AddCourseModal({
       description: formData.get("description") as string,
       totalModules: parseInt(formData.get("totalModules") as string),
       sections: [],
+      isCompleted: false,
     };
     onSubmit(courseData);
     onClose();

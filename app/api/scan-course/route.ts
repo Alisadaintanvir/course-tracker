@@ -53,8 +53,6 @@ export async function POST(request: Request) {
 
     // Get directory name as course name
     const courseName = path.basename(normalizedPath);
-    console.log("Course name:", courseName);
-    console.log("Full path:", normalizedPath);
 
     // Scan the directory structure
     const structure: CourseStructure = {

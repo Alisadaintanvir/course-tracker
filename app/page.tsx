@@ -8,7 +8,7 @@ import NotesModal from "./components/NotesModal";
 import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
 import Stats from "./components/Stats";
 import CourseCard from "./components/CourseCard";
-import { Course } from "./types/course";
+import { Course, Section, Video } from "./types/course";
 
 const dummyCourses: Course[] = [
   {
@@ -103,27 +103,37 @@ export default function Home() {
   const [showActiveOnly, setShowActiveOnly] = useState(false);
 
   useEffect(() => {
-    const storedCourses = localStorage.getItem("courses");
-    if (!storedCourses) {
-      localStorage.setItem("courses", JSON.stringify(dummyCourses));
-      setCourses(dummyCourses);
-    } else {
-      const parsedCourses = JSON.parse(storedCourses).map((course: Course) => ({
-        ...course,
-        lastAccessed: new Date(course.lastAccessed),
-        sections: course.sections.map((section) => ({
-          ...section,
-          modules: section.modules.map((module) => ({
-            ...module,
-            lastModified: new Date(module.lastModified),
-          })),
-        })),
-      }));
-      setCourses(parsedCourses);
-    }
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch("/api/courses");
+        if (!response.ok) {
+          throw new Error("Failed to fetch courses");
+        }
+        const data = await response.json();
+        setCourses(
+          data.map((course: Course) => ({
+            ...course,
+            lastAccessed: new Date(course.lastAccessed),
+            sections: course.sections.map((section) => ({
+              ...section,
+              modules: section.modules.map((module) => ({
+                ...module,
+                lastModified: new Date(module.lastModified),
+              })),
+            })),
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+        // Fallback to dummy data if API fails
+        setCourses(dummyCourses);
+      }
+    };
+
+    fetchCourses();
   }, []);
 
-  const handleAddCourse = (
+  const handleAddCourse = async (
     courseData: Omit<
       Course,
       | "id"
@@ -133,24 +143,52 @@ export default function Home() {
       | "currentVideo"
     >
   ) => {
-    const isDuplicate = courses.some(
-      (course) => course.title.toLowerCase() === courseData.title.toLowerCase()
-    );
+    try {
+      const isDuplicate = courses.some(
+        (course) =>
+          course.title.toLowerCase() === courseData.title.toLowerCase()
+      );
 
-    if (isDuplicate) return false;
+      if (isDuplicate) return false;
 
-    const newCourse: Course = {
-      ...courseData,
-      id: Math.random().toString(36).substr(2, 9),
-      currentModule: 1,
-      lastAccessed: new Date(),
-      currentSection: 0,
-      currentVideo: 0,
-    };
-    const updatedCourses = [...courses, newCourse];
-    setCourses(updatedCourses);
-    localStorage.setItem("courses", JSON.stringify(updatedCourses));
-    return true;
+      const response = await fetch("/api/courses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...courseData,
+          currentModule: 1,
+          lastAccessed: new Date(),
+          currentSection: 0,
+          currentVideo: 0,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add course");
+      }
+
+      const newCourse = await response.json();
+      setCourses((prevCourses) => [
+        ...prevCourses,
+        {
+          ...newCourse,
+          lastAccessed: new Date(newCourse.lastAccessed),
+          sections: newCourse.sections.map((section: any) => ({
+            ...section,
+            modules: section.modules.map((module: any) => ({
+              ...module,
+              lastModified: new Date(module.lastModified),
+            })),
+          })),
+        },
+      ]);
+      return true;
+    } catch (error) {
+      console.error("Error adding course:", error);
+      return false;
+    }
   };
 
   const getProgress = (course: Course) => {
@@ -223,15 +261,28 @@ export default function Home() {
     });
   };
 
-  const handleDeleteCourse = (courseId: string) => {
-    setCourses((prevCourses) => {
-      const updatedCourses = prevCourses.filter(
-        (course) => course.id !== courseId
-      );
-      localStorage.setItem("courses", JSON.stringify(updatedCourses));
-      return updatedCourses;
-    });
-    setCourseToDelete(null);
+  const handleDeleteCourse = async (courseId: string) => {
+    try {
+      const response = await fetch(`/api/courses?id=${courseId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete course");
+      }
+
+      setCourses((prevCourses) => {
+        const updatedCourses = prevCourses.filter(
+          (course) => course.id !== courseId
+        );
+        localStorage.setItem("courses", JSON.stringify(updatedCourses));
+        return updatedCourses;
+      });
+      setCourseToDelete(null);
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      // You might want to show an error message to the user here
+    }
   };
 
   const handleToggleActive = (courseId: string) => {
