@@ -1,13 +1,13 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { ICourse } from "@/app/models/Course";
+import { Course } from "@/app/types/course";
 
 interface CourseContextType {
-  courses: ICourse[];
-  getCourse: (id: string) => ICourse | undefined;
-  addCourse: (course: Omit<ICourse, "_id">) => Promise<void>;
-  updateCourse: (course: ICourse) => Promise<void>;
+  courses: Course[];
+  getCourse: (id: string) => Course | undefined;
+  addCourse: (course: Omit<Course, "id">) => Promise<void>;
+  updateCourse: (course: Course) => Promise<void>;
   deleteCourse: (id: string) => Promise<void>;
   toggleCourseCompletion: (id: string) => Promise<void>;
 }
@@ -15,7 +15,7 @@ interface CourseContextType {
 const CourseContext = createContext<CourseContextType | undefined>(undefined);
 
 export function CourseProvider({ children }: { children: React.ReactNode }) {
-  const [courses, setCourses] = useState<ICourse[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
 
   useEffect(() => {
     fetchCourses();
@@ -33,10 +33,10 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getCourse = (id: string) => {
-    return courses.find((course) => course._id === id);
+    return courses.find((course) => course.id === id);
   };
 
-  const addCourse = async (course: Omit<ICourse, "_id">) => {
+  const addCourse = async (course: Omit<Course, "id">) => {
     try {
       const response = await fetch("/api/courses", {
         method: "POST",
@@ -55,10 +55,10 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const updateCourse = async (course: ICourse) => {
+  const updateCourse = async (course: Course) => {
     try {
-      const response = await fetch(`/api/courses/${course._id}`, {
-        method: "PUT",
+      const response = await fetch(`/api/courses?id=${course.id}`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
@@ -68,7 +68,7 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) throw new Error("Failed to update course");
       const updatedCourse = await response.json();
       setCourses((prev) =>
-        prev.map((c) => (c._id === course._id ? updatedCourse : c))
+        prev.map((c) => (c.id === course.id ? updatedCourse : c))
       );
     } catch (error) {
       console.error("Error updating course:", error);
@@ -78,12 +78,12 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
 
   const deleteCourse = async (id: string) => {
     try {
-      const response = await fetch(`/api/courses/${id}`, {
+      const response = await fetch(`/api/courses?id=${id}`, {
         method: "DELETE",
       });
 
       if (!response.ok) throw new Error("Failed to delete course");
-      setCourses((prev) => prev.filter((course) => course._id !== id));
+      setCourses((prev) => prev.filter((course) => course.id !== id));
     } catch (error) {
       console.error("Error deleting course:", error);
       throw error;

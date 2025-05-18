@@ -8,90 +8,7 @@ import NotesModal from "./components/NotesModal";
 import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
 import Stats from "./components/Stats";
 import CourseCard from "./components/CourseCard";
-import { Course, Section, Video } from "./types/course";
-
-const dummyCourses: Course[] = [
-  {
-    id: "1",
-    title: "Next.js Masterclass",
-    category: "Web Development",
-    description: "Learn Next.js from scratch to advanced",
-    totalModules: 12,
-    currentModule: 8,
-    lastAccessed: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    sections: [
-      {
-        name: "Getting Started",
-        path: "/courses/nextjs/getting-started",
-        modules: [
-          {
-            name: "Introduction to Next.js",
-            path: "/courses/nextjs/getting-started/intro.mp4",
-            size: 1024000,
-            lastModified: new Date(),
-          },
-          {
-            name: "Setting up your environment",
-            path: "/courses/nextjs/getting-started/setup.mp4",
-            size: 2048000,
-            lastModified: new Date(),
-          },
-        ],
-      },
-      {
-        name: "Core Concepts",
-        path: "/courses/nextjs/core-concepts",
-        modules: [
-          {
-            name: "Routing in Next.js",
-            path: "/courses/nextjs/core-concepts/routing.mp4",
-            size: 3072000,
-            lastModified: new Date(),
-          },
-          {
-            name: "Data Fetching",
-            path: "/courses/nextjs/core-concepts/data-fetching.mp4",
-            size: 4096000,
-            lastModified: new Date(),
-          },
-        ],
-      },
-    ],
-    currentSection: 0,
-    currentVideo: 0,
-  },
-  {
-    id: "2",
-    title: "React Fundamentals",
-    category: "Web Development",
-    description: "Master the basics of React",
-    totalModules: 10,
-    currentModule: 5,
-    lastAccessed: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    sections: [
-      {
-        name: "React Basics",
-        path: "/courses/react/basics",
-        modules: [
-          {
-            name: "Components and Props",
-            path: "/courses/react/basics/components.mp4",
-            size: 1536000,
-            lastModified: new Date(),
-          },
-          {
-            name: "State and Lifecycle",
-            path: "/courses/react/basics/state.mp4",
-            size: 2560000,
-            lastModified: new Date(),
-          },
-        ],
-      },
-    ],
-    currentSection: 0,
-    currentVideo: 0,
-  },
-];
+import { Course } from "./types/course";
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -125,8 +42,6 @@ export default function Home() {
         );
       } catch (error) {
         console.error("Error fetching courses:", error);
-        // Fallback to dummy data if API fails
-        setCourses(dummyCourses);
       }
     };
 
@@ -285,16 +200,40 @@ export default function Home() {
     }
   };
 
-  const handleToggleActive = (courseId: string) => {
-    setCourses((prevCourses) => {
-      const updatedCourses = prevCourses.map((course) =>
-        course.id === courseId
-          ? { ...course, isActive: !course.isActive }
-          : course
+  const handleToggleActive = async (courseId: string) => {
+    try {
+      const course = courses.find((c) => c.id === courseId);
+      if (!course) return;
+
+      const response = await fetch(`/api/courses?id=${courseId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...course,
+          isActive: !course.isActive,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update course");
+      }
+
+      const updatedCourse = await response.json();
+      setCourses((prevCourses) =>
+        prevCourses.map((course) =>
+          course.id === courseId
+            ? {
+                ...course,
+                isActive: updatedCourse.isActive,
+              }
+            : course
+        )
       );
-      localStorage.setItem("courses", JSON.stringify(updatedCourses));
-      return updatedCourses;
-    });
+    } catch (error) {
+      console.error("Error updating course:", error);
+    }
   };
 
   const filteredCourses = showActiveOnly
