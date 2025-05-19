@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { Course } from "@/app/types/course";
 import ModuleControls from "./ModuleControls";
+import { useEffect } from "react";
 
 interface CourseCardProps {
   course: Course;
@@ -33,6 +34,13 @@ export default function CourseCard({
   onVideoChange,
   onToggleActive,
 }: CourseCardProps) {
+  // Effect to automatically set isActive to false when course is completed
+  useEffect(() => {
+    if (course.isCompleted && course.isActive) {
+      onToggleActive(course.id);
+    }
+  }, [course.isCompleted, course.isActive, course.id, onToggleActive]);
+
   return (
     <div
       className={`bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border ${
@@ -59,33 +67,43 @@ export default function CourseCard({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+                <h3
+                  className="font-semibold text-gray-900 dark:text-white text-lg truncate max-w-[300px]"
+                  title={course.title}
+                >
                   {course.title}
                 </h3>
                 {course.isCompleted && (
-                  <span className="px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full">
+                  <span className="px-2 py-1 text-xs font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full whitespace-nowrap">
                     Completed
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
                 {course.category}
               </p>
             </div>
           </div>
         </Link>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => onToggleActive(course.id)}
-            className={`p-2 rounded-lg transition-colors ${
-              course.isActive
-                ? "text-yellow-500 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-300"
-                : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-            }`}
-            title={course.isActive ? "Mark as inactive" : "Mark as active"}
-          >
-            <Star size={20} className={course.isActive ? "fill-current" : ""} />
-          </button>
+          <div className="w-10 h-10 flex items-center justify-center">
+            {!course.isCompleted && (
+              <button
+                onClick={() => onToggleActive(course.id)}
+                className={`p-2 rounded-lg transition-colors ${
+                  course.isActive
+                    ? "text-yellow-500 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-300"
+                    : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                }`}
+                title={course.isActive ? "Mark as inactive" : "Mark as active"}
+              >
+                <Star
+                  size={20}
+                  className={course.isActive ? "fill-current" : ""}
+                />
+              </button>
+            )}
+          </div>
           <button
             onClick={() => onDelete(course)}
             className="p-2 text-gray-400 hover:text-rose-600 dark:text-gray-500 dark:hover:text-rose-400 transition-colors"

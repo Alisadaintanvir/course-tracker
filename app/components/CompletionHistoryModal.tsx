@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { CompletionRecord } from "@/types/course";
+import { CompletionRecord } from "@/app/types/course";
 
 interface CompletionHistoryModalProps {
   isOpen: boolean;
@@ -18,8 +18,9 @@ export default function CompletionHistoryModal({
 }: CompletionHistoryModalProps) {
   if (!isOpen) return null;
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleString(undefined, {
+  const formatDate = (date: Date | string) => {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    return dateObj.toLocaleString(undefined, {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -32,9 +33,14 @@ export default function CompletionHistoryModal({
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
       <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Completion History
-          </h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Completion History
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              {courseTitle}
+            </p>
+          </div>
           <button
             onClick={onClose}
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
@@ -51,9 +57,17 @@ export default function CompletionHistoryModal({
           ) : (
             <div className="space-y-4">
               {completionHistory
-                .sort(
-                  (a, b) => b.completedAt.getTime() - a.completedAt.getTime()
-                )
+                .sort((a, b) => {
+                  const dateA =
+                    a.completedAt instanceof Date
+                      ? a.completedAt
+                      : new Date(a.completedAt);
+                  const dateB =
+                    b.completedAt instanceof Date
+                      ? b.completedAt
+                      : new Date(b.completedAt);
+                  return dateB.getTime() - dateA.getTime();
+                })
                 .map((record, index) => (
                   <div
                     key={index}

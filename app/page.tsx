@@ -8,11 +8,13 @@ import NotesModal from "./components/NotesModal";
 import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
 import Stats from "./components/Stats";
 import CourseCard from "./components/CourseCard";
-import { Course } from "./types/course";
+import { Course, Section, Video } from "./types/course";
+import LoadingSpinner from "./components/LoadingSpinner";
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showScanner, setShowScanner] = useState(false);
   const [selectedCourseForNotes, setSelectedCourseForNotes] =
     useState<Course | null>(null);
@@ -21,6 +23,7 @@ export default function Home() {
 
   useEffect(() => {
     const fetchCourses = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch("/api/courses");
         if (!response.ok) {
@@ -31,9 +34,9 @@ export default function Home() {
           data.map((course: Course) => ({
             ...course,
             lastAccessed: new Date(course.lastAccessed),
-            sections: course.sections.map((section) => ({
+            sections: course.sections.map((section: Section) => ({
               ...section,
-              modules: section.modules.map((module) => ({
+              modules: section.modules.map((module: Video) => ({
                 ...module,
                 lastModified: new Date(module.lastModified),
               })),
@@ -42,22 +45,22 @@ export default function Home() {
         );
       } catch (error) {
         console.error("Error fetching courses:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchCourses();
   }, []);
 
-  const handleAddCourse = async (
-    courseData: Omit<
-      Course,
-      | "id"
-      | "currentModule"
-      | "lastAccessed"
-      | "currentSection"
-      | "currentVideo"
-    >
-  ) => {
+  const handleAddCourse = async (courseData: {
+    title: string;
+    category: string;
+    description?: string;
+    totalModules: number;
+    sections: Section[];
+    isCompleted: boolean;
+  }) => {
     try {
       const isDuplicate = courses.some(
         (course) =>
@@ -73,6 +76,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           ...courseData,
+          description: courseData.description || "",
           currentModule: 1,
           lastAccessed: new Date(),
           currentSection: 0,
@@ -90,9 +94,9 @@ export default function Home() {
         {
           ...newCourse,
           lastAccessed: new Date(newCourse.lastAccessed),
-          sections: newCourse.sections.map((section: any) => ({
+          sections: newCourse.sections.map((section: Section) => ({
             ...section,
-            modules: section.modules.map((module: any) => ({
+            modules: section.modules.map((module: Video) => ({
               ...module,
               lastModified: new Date(module.lastModified),
             })),
@@ -298,37 +302,45 @@ export default function Home() {
 
         {/* Course Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredCourses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              getProgress={getProgress}
-              getTimeAgo={getTimeAgo}
-              onDelete={setCourseToDelete}
-              onNotesClick={setSelectedCourseForNotes}
-              onSectionChange={handleSectionChange}
-              onVideoChange={handleVideoChange}
-              onToggleActive={handleToggleActive}
-            />
-          ))}
-
-          {/* Add Course Card */}
-          <div
-            onClick={() => setIsModalOpen(true)}
-            className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-6 flex items-center justify-center hover:border-pink-500 dark:hover:border-pink-500 transition-all duration-300 cursor-pointer group bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm"
-          >
-            <div className="text-center flex flex-col items-center justify-center">
-              <div className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/20 dark:to-purple-900/20 p-4 rounded-full mb-3 group-hover:from-pink-200 dark:group-hover:from-pink-800/30 group-hover:to-purple-200 dark:group-hover:to-purple-800/30 transition-colors flex items-center justify-center">
-                <Plus
-                  className="text-pink-600 dark:text-pink-400 group-hover:text-pink-700 dark:group-hover:text-pink-300"
-                  size={32}
-                />
-              </div>
-              <p className="text-gray-600 dark:text-gray-400 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
-                Add another course
-              </p>
+          {isLoading ? (
+            <div className="col-span-full flex justify-center items-center min-h-[400px]">
+              <LoadingSpinner size={64} text="Loading your courses..." />
             </div>
-          </div>
+          ) : (
+            <>
+              {filteredCourses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  getProgress={getProgress}
+                  getTimeAgo={getTimeAgo}
+                  onDelete={setCourseToDelete}
+                  onNotesClick={setSelectedCourseForNotes}
+                  onSectionChange={handleSectionChange}
+                  onVideoChange={handleVideoChange}
+                  onToggleActive={handleToggleActive}
+                />
+              ))}
+
+              {/* Add Course Card */}
+              <div
+                onClick={() => setIsModalOpen(true)}
+                className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-6 flex items-center justify-center hover:border-pink-500 dark:hover:border-pink-500 transition-all duration-300 cursor-pointer group bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm"
+              >
+                <div className="text-center flex flex-col items-center justify-center">
+                  <div className="bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/20 dark:to-purple-900/20 p-4 rounded-full mb-3 group-hover:from-pink-200 dark:group-hover:from-pink-800/30 group-hover:to-purple-200 dark:group-hover:to-purple-800/30 transition-colors flex items-center justify-center">
+                    <Plus
+                      className="text-pink-600 dark:text-pink-400 group-hover:text-pink-700 dark:group-hover:text-pink-300"
+                      size={32}
+                    />
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                    Add another course
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

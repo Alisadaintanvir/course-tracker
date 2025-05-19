@@ -10,11 +10,15 @@ import {
   History,
   ChevronDown,
   CheckCircle2,
+  RotateCcw,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import NotesModal from "@/app/components/NotesModal";
 import CompletionHistoryModal from "@/app/components/CompletionHistoryModal";
 import { useCourse } from "@/app/context/CourseContext";
+import LoadingSpinner from "@/app/components/LoadingSpinner";
+import DeleteConfirmationModal from "@/app/components/DeleteConfirmationModal";
 
 interface Video {
   name: string;
@@ -57,21 +61,38 @@ interface CompletionRecord {
 export default function CoursePage() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const { getCourse, updateCourse, toggleCourseCompletion } = useCourse();
+  const { getCourse, updateCourse, toggleCourseCompletion, deleteCourse } =
+    useCourse();
   const [course, setCourse] = useState<Course | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [expandedSection, setExpandedSection] = useState<number | null>(null);
   const viewNotes = searchParams.get("view") === "notes";
 
   useEffect(() => {
+    setIsLoading(true);
     const foundCourse = getCourse(params.id as string);
     if (foundCourse) {
-      setCourse(foundCourse);
+      // Convert dates to proper Date objects
+      const courseWithDates = {
+        ...foundCourse,
+        lastAccessed: new Date(foundCourse.lastAccessed),
+        completedAt: foundCourse.completedAt
+          ? new Date(foundCourse.completedAt)
+          : undefined,
+        completionHistory: foundCourse.completionHistory?.map((record) => ({
+          ...record,
+          completedAt: new Date(record.completedAt),
+        })),
+      };
+      setCourse(courseWithDates);
       if (viewNotes) {
         setIsNotesModalOpen(true);
       }
     }
+    setIsLoading(false);
   }, [params.id, viewNotes, getCourse]);
 
   // Update expanded section when current section changes
@@ -144,20 +165,54 @@ export default function CoursePage() {
     setExpandedSection(expandedSection === sectionIndex ? null : sectionIndex);
   };
 
-  if (!course) {
+  const handleResetCourse = async () => {
+    if (!course) return;
+
+    if (
+      !window.confirm(
+        "Are you sure you want to reset this course? This will clear all progress, notes, and completion history."
+      )
+    ) {
+      return;
+    }
+
+    const resetCourse = {
+      ...course,
+      currentSection: 0,
+      currentVideo: 0,
+      currentModule: 1,
+      lastAccessed: new Date(),
+      notes: "",
+      completionHistory: [],
+      isCompleted: false,
+      completedAt: undefined,
+    };
+
+    setCourse(resetCourse);
+    await updateCourse(resetCourse);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex justify-center items-center min-h-[600px]">
+          <LoadingSpinner size={64} text="Loading course details..." />
+        </div>
+      </div>
+    );
+  }
+
+  if (!course && !isLoading) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Course not found
           </h1>
-          <Link
-            href="/"
-            className="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-          >
-            <ChevronLeft size={20} />
-            Back to Courses
-          </Link>
+          <p className="text-gray-600 dark:text-gray-400">
+            The course you&apos;re looking for doesn&apos;t exist or has been
+            removed.
+          </p>
         </div>
       </div>
     );
@@ -221,6 +276,24 @@ export default function CoursePage() {
                 Completed on {new Date(course.completedAt).toLocaleDateString()}
               </p>
             )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleResetCourse}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 border border-gray-200 dark:border-gray-700 hover:border-red-200 dark:hover:border-red-800"
+              title="Reset course progress"
+            >
+              <RotateCcw size={18} />
+              <span className="text-sm font-medium">Reset Progress</span>
+            </button>
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all duration-200 border border-gray-200 dark:border-gray-700 hover:border-red-200 dark:hover:border-red-800"
+              title="Delete course"
+            >
+              <Trash2 size={18} />
+              <span className="text-sm font-medium">Delete Course</span>
+            </button>
           </div>
         </div>
       </div>
@@ -518,6 +591,18 @@ export default function CoursePage() {
         onClose={() => setIsHistoryModalOpen(false)}
         courseTitle={course.title}
         completionHistory={course.completionHistory || []}
+      />
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => {
+          if (course) {
+            deleteCourse(course.id);
+            window.location.href = "/";
+          }
+        }}
+        courseTitle={course?.title || ""}
       />
 
       <style jsx global>{`
