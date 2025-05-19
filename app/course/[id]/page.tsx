@@ -475,7 +475,7 @@ export default function CoursePage() {
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
           Course Content
         </h2>
-        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="space-y-4">
           {course.sections.map((section, sectionIndex) => (
             <div
               key={sectionIndex}
@@ -508,7 +508,7 @@ export default function CoursePage() {
                   )}
                   <button
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevent section toggle when clicking button
+                      e.stopPropagation();
                       handleSectionChange(sectionIndex);
                     }}
                     className={`px-3 py-1 rounded-md text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
