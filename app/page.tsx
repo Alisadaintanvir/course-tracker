@@ -2,14 +2,14 @@
 
 import { Plus, Sparkles, FolderOpen, Star } from "lucide-react";
 import { useState, useEffect } from "react";
-import AddCourseModal from "./components/AddCourseModal";
-import CourseScanner from "./components/CourseScanner";
-import NotesModal from "./components/NotesModal";
-import DeleteConfirmationModal from "./components/DeleteConfirmationModal";
-import Stats from "./components/Stats";
-import CourseCard from "./components/CourseCard";
-import { Course, Section, Video } from "./types/course";
-import LoadingSpinner from "./components/LoadingSpinner";
+import AddCourseModal from "../components/AddCourseModal";
+import CourseScanner from "../components/CourseScanner";
+import NotesModal from "../components/NotesModal";
+import DeleteConfirmationModal from "../components/DeleteConfirmationModal";
+import Stats from "../components/Stats";
+import CourseCard from "../components/CourseCard";
+import { Course, Section, Video } from "../types/course";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);

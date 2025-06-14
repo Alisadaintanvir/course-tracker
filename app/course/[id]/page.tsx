@@ -14,11 +14,11 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import NotesModal from "@/app/components/NotesModal";
-import CompletionHistoryModal from "@/app/components/CompletionHistoryModal";
-import { useCourse } from "@/app/context/CourseContext";
-import LoadingSpinner from "@/app/components/LoadingSpinner";
-import DeleteConfirmationModal from "@/app/components/DeleteConfirmationModal";
+import NotesModal from "@/components/NotesModal";
+import CompletionHistoryModal from "@/components/CompletionHistoryModal";
+import { useCourse } from "@/context/CourseContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 
 interface Video {
   name: string;

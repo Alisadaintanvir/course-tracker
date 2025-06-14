@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Course } from "@/app/types/course";
+import { Course } from "@/types/course";
 
 interface CourseContextType {
   courses: Course[];

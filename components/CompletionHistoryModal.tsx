@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { CompletionRecord } from "@/app/types/course";
+import { CompletionRecord } from "@/types/course";
 
 interface CompletionHistoryModalProps {
   isOpen: boolean;

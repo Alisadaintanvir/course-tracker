@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "./components/ThemeProvider";
-import ThemeToggle from "./components/ThemeToggle";
-import { CourseProvider } from "./context/CourseContext";
+import { ThemeProvider } from "../components/ThemeProvider";
+import ThemeToggle from "../components/ThemeToggle";
+import { CourseProvider } from "../context/CourseContext";
+import { ToastContainer } from "react-toastify";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,6 +25,7 @@ export default function RootLayout({
       >
         <CourseProvider>
           <ThemeProvider>
+            <ToastContainer position="top-right" autoClose={3000} />
             <div className="relative">
               {children}
               <div className="fixed bottom-6 right-6 z-50">

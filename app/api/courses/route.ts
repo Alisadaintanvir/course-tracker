@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectDB } from "@/app/lib/mongodb";
-import Course, { ICourse } from "@/app/models/Course";
+import { connectDB } from "@/lib/mongodb";
+import Course, { ICourse } from "@/models/Course";
 import { Document } from "mongoose";
 
 const transformCourse = (course: Document & ICourse) => {

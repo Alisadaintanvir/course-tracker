@@ -9,7 +9,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
-import { Course } from "@/app/types/course";
+import { Course } from "@/types/course";
 import ModuleControls from "./ModuleControls";
 import { useEffect } from "react";
 
