@@ -48,7 +48,6 @@ export function RegistrationForm({
         body: JSON.stringify(data),
       });
       const result = await res.json();
-      console.log("Signup result:", result);
 
       if (result.success) {
         toast.success(result.message);

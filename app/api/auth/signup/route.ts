@@ -1,8 +1,8 @@
 import { connectDB } from "@/lib/mongodb";
-import { User } from "@/models/User";
 import { registrationSchema } from "@/utils/zod";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { User } from "@/schemas/User";
 
 export async function POST(Request: Request) {
   const body = await Request.json();
@@ -25,8 +25,11 @@ export async function POST(Request: Request) {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
-        { error: "User already exists." },
-        { status: 409 }
+        {
+          success: false,
+          message: "User already exists",
+        },
+        { status: 400 }
       );
     }
 
@@ -37,6 +40,14 @@ export async function POST(Request: Request) {
       password: hashPassword,
     });
     await newUser.save();
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "User created successfully",
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(
@@ -47,9 +58,4 @@ export async function POST(Request: Request) {
       { status: 500 }
     );
   }
-
-  return NextResponse.json(
-    { message: "User created successfully." },
-    { status: 201 }
-  );
 }

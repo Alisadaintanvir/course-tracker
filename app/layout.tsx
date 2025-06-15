@@ -5,6 +5,7 @@ import { ThemeProvider } from "../components/ThemeProvider";
 import ThemeToggle from "../components/ThemeToggle";
 import { CourseProvider } from "../context/CourseContext";
 import { ToastContainer } from "react-toastify";
+import { ThemeScript } from "@/components/ThemeScript";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,6 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body
         className={`${inter.className} min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-slate-950 dark:via-purple-900/40 dark:to-indigo-900/40`}
       >
