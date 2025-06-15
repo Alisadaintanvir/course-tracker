@@ -25,7 +25,7 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body
-        className={`${inter.className} min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-slate-950 dark:via-purple-900/40 dark:to-indigo-900/40`}
+        className={`${inter.className} min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:bg-gradient-to-br dark:from-indigo-900 dark:via-purple-900 dark:to-gray-900`}
       >
         <CourseProvider>
           <ThemeProvider>
