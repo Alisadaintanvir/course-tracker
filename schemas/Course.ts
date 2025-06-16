@@ -29,6 +29,7 @@ export interface ICourse extends Document {
   }[];
   isCompleted: boolean;
   completedAt?: Date;
+  userId: Schema.Types.ObjectId; // Add user reference
 }
 
 const VideoSchema = new Schema({
@@ -71,6 +72,7 @@ const CourseSchema = new Schema(
     completionHistory: [CompletionRecordSchema],
     isCompleted: { type: Boolean, default: false },
     completedAt: { type: Date },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true }, // Add reference to User model
   },
   {
     timestamps: true,
@@ -79,6 +81,9 @@ const CourseSchema = new Schema(
 
 // Add text index for search functionality
 CourseSchema.index({ title: "text", description: "text", category: "text" });
+
+// Add compound index for user and course title to ensure uniqueness per user
+CourseSchema.index({ userId: 1, title: 1 }, { unique: true });
 
 export default mongoose.models.Course ||
   mongoose.model<ICourse>("Course", CourseSchema);

@@ -1,14 +1,29 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Course from "@/schemas/Course";
+import { auth } from "@/auth";
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await auth();
+
+    // Check for authentication
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
     await connectDB();
-    const course = await Course.findById(params.id);
+    const course = await Course.findOne({
+      _id: params.id,
+      userId: session.user.id,
+    });
+
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
@@ -27,12 +42,28 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await auth();
+
+    // Check for authentication
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
     await connectDB();
     const courseData = await request.json();
-    const course = await Course.findByIdAndUpdate(params.id, courseData, {
-      new: true,
-      runValidators: true,
-    });
+
+    const course = await Course.findOneAndUpdate(
+      { _id: params.id, userId: session.user.id },
+      courseData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
@@ -51,8 +82,22 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await auth();
+
+    // Check for authentication
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
     await connectDB();
-    const course = await Course.findByIdAndDelete(params.id);
+    const course = await Course.findOneAndDelete({
+      _id: params.id,
+      userId: session.user.id,
+    });
+
     if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
