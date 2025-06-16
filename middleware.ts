@@ -8,8 +8,6 @@ export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const session = await auth();
 
-  console.log(session);
-
   // Check if it's an auth route (login/registration)
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
   if (isAuthRoute) {

@@ -6,6 +6,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import { CourseProvider } from "../context/CourseContext";
 import { ToastContainer } from "react-toastify";
 import { ThemeScript } from "@/components/ThemeScript";
+import { AuthProvider } from "@/components/AuthProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,17 +28,19 @@ export default function RootLayout({
       <body
         className={`${inter.className} min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:bg-gradient-to-br dark:from-indigo-900 dark:via-purple-900 dark:to-gray-900`}
       >
-        <CourseProvider>
-          <ThemeProvider>
-            <ToastContainer position="top-right" autoClose={3000} />
-            <div className="relative">
-              {children}
-              <div className="fixed bottom-6 right-6 z-50">
-                <ThemeToggle />
+        <AuthProvider>
+          <CourseProvider>
+            <ThemeProvider>
+              <ToastContainer position="top-right" autoClose={3000} />
+              <div className="relative">
+                {children}
+                <div className="fixed bottom-6 right-6 z-50">
+                  <ThemeToggle />
+                </div>
               </div>
-            </div>
-          </ThemeProvider>
-        </CourseProvider>
+            </ThemeProvider>
+          </CourseProvider>
+        </AuthProvider>
       </body>
     </html>
   );
