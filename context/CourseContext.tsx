@@ -17,6 +17,21 @@ const CourseContext = createContext<CourseContextType | undefined>(undefined);
 export function CourseProvider({ children }: { children: React.ReactNode }) {
   const [courses, setCourses] = useState<Course[]>([]);
 
+  useEffect(() => {
+    fetchCourses();
+  }, []);
+
+  const fetchCourses = async () => {
+    try {
+      const response = await fetch("/api/courses");
+      if (!response.ok) throw new Error("Failed to fetch courses");
+      const data = await response.json();
+      setCourses(data);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
+  };
+
   const getCourse = (id: string) => {
     return courses.find((course) => course.id === id);
   };
