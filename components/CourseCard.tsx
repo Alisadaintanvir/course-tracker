@@ -40,20 +40,19 @@ export default function CourseCard({
       onToggleActive(course.id);
     }
   }, [course.isCompleted, course.isActive, course.id, onToggleActive]);
-
   return (
     <div
-      className={`bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border ${
+      className={`bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 border w-full overflow-hidden ${
         course.isCompleted
           ? "border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/20"
           : "border-gray-100 dark:border-gray-700"
       } transform hover:-translate-y-1`}
     >
-      <div className="flex items-start justify-between">
-        <Link href={`/course/${course.id}`} className="flex-1">
+      <div className="flex items-start justify-between gap-2">
+        <Link href={`/course/${course.id}`} className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
             <div
-              className={`p-3 rounded-xl ${
+              className={`p-3 rounded-xl flex-shrink-0 ${
                 course.isCompleted
                   ? "bg-gradient-to-br from-green-500 to-emerald-500"
                   : "bg-gradient-to-br from-pink-500 to-rose-500"
@@ -64,11 +63,11 @@ export default function CourseCard({
               ) : (
                 <BookOpen className="text-white" size={24} />
               )}
-            </div>
+            </div>{" "}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3
-                  className="font-semibold text-gray-900 dark:text-white text-lg truncate max-w-[300px]"
+                  className="font-semibold text-gray-900 dark:text-white text-lg line-clamp-1 break-words"
                   title={course.title}
                 >
                   {course.title}
@@ -79,18 +78,18 @@ export default function CourseCard({
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+              <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-full">
                 {course.category}
               </p>
             </div>
-          </div>
+          </div>{" "}
         </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 flex items-center justify-center">
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="w-8 h-8 flex items-center justify-center">
             {!course.isCompleted && (
               <button
                 onClick={() => onToggleActive(course.id)}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-1 rounded-lg transition-colors ${
                   course.isActive
                     ? "text-yellow-500 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-300"
                     : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
@@ -102,14 +101,14 @@ export default function CourseCard({
                   className={course.isActive ? "fill-current" : ""}
                 />
               </button>
-            )}
+            )}{" "}
           </div>
           <button
             onClick={() => onDelete(course)}
-            className="p-2 text-gray-400 hover:text-rose-600 dark:text-gray-500 dark:hover:text-rose-400 transition-colors"
+            className="p-1 text-gray-400 hover:text-rose-600 dark:text-gray-500 dark:hover:text-rose-400 transition-colors"
             title="Delete Course"
           >
-            <Trash2 size={20} />
+            <Trash2 size={18} />
           </button>
         </div>
       </div>

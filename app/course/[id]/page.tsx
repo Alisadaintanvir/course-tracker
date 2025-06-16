@@ -242,7 +242,7 @@ export default function CoursePage() {
       {/* Header */}
       <div className="mb-8">
         <Link
-          href="/"
+          href="/dashboard"
           className="inline-flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white mb-4"
         >
           <ChevronLeft size={20} />
