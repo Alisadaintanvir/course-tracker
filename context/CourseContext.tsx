@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Course } from "@/types/course";
+import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 
 interface CourseContextType {
   courses: Course[];
@@ -16,10 +18,19 @@ const CourseContext = createContext<CourseContextType | undefined>(undefined);
 
 export function CourseProvider({ children }: { children: React.ReactNode }) {
   const [courses, setCourses] = useState<Course[]>([]);
+  const { data: session } = useSession();
+  const pathname = usePathname();
+
+  const isDashboard = pathname?.startsWith("/dashboard");
 
   useEffect(() => {
-    fetchCourses();
-  }, []);
+    if (session && isDashboard) {
+      fetchCourses();
+    } else {
+      // Clear courses if not authenticated or not on dashboard
+      setCourses([]);
+    }
+  }, [session, isDashboard]);
 
   const fetchCourses = async () => {
     try {
