@@ -94,13 +94,12 @@ export default function CoursePage() {
     }
     setIsLoading(false);
   }, [params.id, viewNotes, getCourse]);
-
   // Update expanded section when current section changes
   useEffect(() => {
     if (course) {
       setExpandedSection(course.currentSection);
     }
-  }, [course?.currentSection]);
+  }, [course]);
 
   const handleSectionChange = (newSection: number) => {
     if (!course) return;
@@ -235,6 +234,14 @@ export default function CoursePage() {
     completedVideos += course.currentVideo;
 
     return Math.round((completedVideos / totalVideos) * 100);
+  };  // Helper function to safely access course properties with TypeScript safety
+  const courseValue = <T,>(accessor: (c: Course) => T, defaultValue: T): T => {
+    if (!course) return defaultValue;
+    try {
+      return accessor(course);
+    } catch {
+      return defaultValue;
+    }
   };
 
   return (
@@ -249,33 +256,33 @@ export default function CoursePage() {
           Back to Courses
         </Link>
         <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {course.title}
-              </h1>
-              <button
-                onClick={() => toggleCourseCompletion(course.id)}
-                className={`p-2 rounded-full transition-colors ${
-                  course.isCompleted
-                    ? "text-green-500 hover:text-green-600 dark:text-green-400 dark:hover:text-green-300"
-                    : "text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
-                }`}
-                title={
-                  course.isCompleted ? "Mark as incomplete" : "Mark as complete"
-                }
-              >
-                <CheckCircle2 size={24} />
-              </button>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">
-              {course.description}
-            </p>
-            {course.isCompleted && course.completedAt && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Completed on {new Date(course.completedAt).toLocaleDateString()}
-              </p>
-            )}
+          <div>              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {courseValue(c => c.title, "")}
+                </h1>
+                {course && (
+                  <button
+                    onClick={() => toggleCourseCompletion(course.id)}
+                    className={`p-2 rounded-full transition-colors ${
+                      courseValue(c => c.isCompleted, false)
+                        ? "text-green-500 hover:text-green-600 dark:text-green-400 dark:hover:text-green-300"
+                        : "text-gray-400 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+                    }`}
+                    title={
+                      courseValue(c => c.isCompleted, false) ? "Mark as incomplete" : "Mark as complete"
+                    }
+                  >
+                    <CheckCircle2 size={24} />
+                  </button>
+                )}
+              </div>
+              <p className="text-gray-600 dark:text-gray-300 mt-2">
+                {courseValue(c => c.description, "")}
+              </p>              {courseValue(c => c.isCompleted && !!c.completedAt, false) && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Completed on {courseValue(c => c.completedAt ? new Date(c.completedAt).toLocaleDateString() : "", "")}
+                </p>
+              )}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -311,10 +318,9 @@ export default function CoursePage() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Category
-              </p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                {course.category}
-              </p>
+              </p>                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {courseValue(c => c.category, "")}
+                </p>
             </div>
           </div>
         </div>
@@ -330,49 +336,47 @@ export default function CoursePage() {
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Last Accessed
-              </p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                {new Date(course.lastAccessed).toLocaleDateString()}
-              </p>
+              </p>                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {courseValue(c => new Date(c.lastAccessed).toLocaleDateString(), "")}
+                </p>
             </div>
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div
-              className={`p-3 rounded-lg ${
-                course.isCompleted
-                  ? "bg-green-100 dark:bg-green-900"
-                  : "bg-indigo-100 dark:bg-indigo-900"
-              }`}
-            >
-              <History
-                className={
-                  course.isCompleted
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-indigo-600 dark:text-indigo-400"
-                }
-                size={24}
-              />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {course.isCompleted ? "Completion Status" : "Completed Modules"}
-              </p>
-              {course.isCompleted ? (
-                <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                  Completed
+          <div className="flex items-center gap-3">              <div
+                className={`p-3 rounded-lg ${
+                  courseValue(c => c.isCompleted, false)
+                    ? "bg-green-100 dark:bg-green-900"
+                    : "bg-indigo-100 dark:bg-indigo-900"
+                }`}
+              >
+                <History
+                  className={
+                    courseValue(c => c.isCompleted, false)
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-indigo-600 dark:text-indigo-400"
+                  }
+                  size={24}
+                />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {courseValue(c => c.isCompleted, false) ? "Completion Status" : "Completed Modules"}
                 </p>
-              ) : (
-                <button
-                  onClick={() => setIsHistoryModalOpen(true)}
-                  className="text-lg font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
-                >
-                  {course.completionHistory?.length || 0} modules
-                </button>
-              )}
-            </div>
+                {courseValue(c => c.isCompleted, false) ? (
+                  <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                    Completed
+                  </p>
+                ) : (
+                  <button
+                    onClick={() => setIsHistoryModalOpen(true)}
+                    className="text-lg font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                  >
+                    {courseValue(c => c.completionHistory?.length || 0, 0)} modules
+                  </button>
+                )}
+              </div>
           </div>
         </div>
       </div>
@@ -389,43 +393,40 @@ export default function CoursePage() {
             </h2>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-300">
-                Overall Progress
-              </span>
-              <span className="text-gray-900 dark:text-white font-medium">
-                {getProgress(course)}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <div
-                className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 h-2.5 rounded-full transition-all duration-300"
-                style={{ width: `${getProgress(course)}%` }}
-              ></div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Current Section
-                </p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {course.sections[course.currentSection]?.name ||
-                    "Not Started"}
-                </p>
+          <div className="space-y-4">              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-300">
+                  Overall Progress
+                </span>
+                <span className="text-gray-900 dark:text-white font-medium">
+                  {courseValue(c => getProgress(c), 0)}%
+                </span>
               </div>
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Current Video
-                </p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {course.sections[course.currentSection]?.modules[
-                    course.currentVideo
-                  ]?.name || "Not Started"}
-                </p>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                <div
+                  className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 h-2.5 rounded-full transition-all duration-300"
+                  style={{ width: `${courseValue(c => getProgress(c), 0)}%` }}
+                ></div>
+              </div>              <div className="grid grid-cols-2 gap-4 mt-6">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Current Section
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {courseValue(c => c.sections[c.currentSection]?.name, "Not Started")}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Current Video
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {courseValue(
+                      c => c.sections[c.currentSection]?.modules[c.currentVideo]?.name,
+                      "Not Started"
+                    )}
+                  </p>
+                </div>
               </div>
-            </div>
           </div>
         </div>
       </div>
@@ -440,47 +441,44 @@ export default function CoursePage() {
                 size={24}
               />
             </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Course Notes
-                </h2>
-                <button
-                  onClick={() => setIsNotesModalOpen(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                >
-                  <StickyNote size={16} />
-                  {course.notes ? "Edit Notes" : "Add Notes"}
-                </button>
-              </div>
-              {course.notes ? (
-                <div className="prose dark:prose-invert max-w-none">
-                  <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
-                    {course.notes}
-                  </p>
+            <div className="flex-1">                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    Course Notes
+                  </h2>
+                  <button
+                    onClick={() => setIsNotesModalOpen(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                  >
+                    <StickyNote size={16} />
+                    {courseValue(c => c.notes ? "Edit Notes" : "Add Notes", "Add Notes")}
+                  </button>
                 </div>
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 italic">
-                  No notes yet. Click the button above to add notes for this
-                  course.
-                </p>
-              )}
+                {courseValue(c => !!c.notes, false) ? (
+                  <div className="prose dark:prose-invert max-w-none">
+                    <p className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                      {courseValue(c => c.notes || "", "")}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 italic">
+                    No notes yet. Click the button above to add notes for this
+                    course.
+                  </p>
+                )}
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Module Controls */}
+      </div>      {/* Module Controls */}
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
           Course Content
         </h2>
         <div className="space-y-4">
-          {course.sections.map((section, sectionIndex) => (
+          {course && course.sections.map((section, sectionIndex) => (
             <div
               key={sectionIndex}
               className={`border rounded-lg overflow-hidden ${
-                sectionIndex === course.currentSection
+                course && sectionIndex === course.currentSection
                   ? "border-indigo-500 dark:border-indigo-400"
                   : "border-gray-200 dark:border-gray-700"
               }`}
@@ -501,7 +499,7 @@ export default function CoursePage() {
                   </h3>
                 </div>
                 <div className="flex items-center gap-3">
-                  {sectionIndex === course.currentSection && (
+                  {course && sectionIndex === course.currentSection && (
                     <span className="text-sm text-indigo-600 dark:text-indigo-400">
                       Current Section
                     </span>
@@ -512,12 +510,12 @@ export default function CoursePage() {
                       handleSectionChange(sectionIndex);
                     }}
                     className={`px-3 py-1 rounded-md text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 ${
-                      sectionIndex === course.currentSection
+                      course && sectionIndex === course.currentSection
                         ? "bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300"
                         : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
                     }`}
                   >
-                    {sectionIndex === course.currentSection
+                    {course && sectionIndex === course.currentSection
                       ? "Current"
                       : "Set as Current"}
                   </button>
@@ -540,7 +538,7 @@ export default function CoursePage() {
                         handleVideoChange(sectionIndex, moduleIndex)
                       }
                       className={`p-4 flex items-center justify-between cursor-pointer ${
-                        sectionIndex === course.currentSection &&
+                        course && sectionIndex === course.currentSection &&
                         moduleIndex === course.currentVideo
                           ? "bg-indigo-50 dark:bg-indigo-900/20"
                           : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
@@ -549,11 +547,11 @@ export default function CoursePage() {
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-2 h-2 rounded-full ${
-                            sectionIndex < course.currentSection ||
+                            course && (sectionIndex < course.currentSection ||
                             (sectionIndex === course.currentSection &&
-                              moduleIndex < course.currentVideo)
+                              moduleIndex < course.currentVideo))
                               ? "bg-green-500"
-                              : sectionIndex === course.currentSection &&
+                              : course && sectionIndex === course.currentSection &&
                                 moduleIndex === course.currentVideo
                               ? "bg-indigo-500"
                               : "bg-gray-300 dark:bg-gray-600"
@@ -563,7 +561,7 @@ export default function CoursePage() {
                           {module.name}
                         </span>
                       </div>
-                      {sectionIndex === course.currentSection &&
+                      {course && sectionIndex === course.currentSection &&
                         moduleIndex === course.currentVideo && (
                           <span className="text-sm text-indigo-600 dark:text-indigo-400">
                             Current
@@ -576,34 +574,34 @@ export default function CoursePage() {
             </div>
           ))}
         </div>
-      </div>
+      </div>      {course && (
+        <>
+          <NotesModal
+            isOpen={isNotesModalOpen}
+            onClose={() => setIsNotesModalOpen(false)}
+            courseId={course.id}
+            initialNotes={course.notes}
+            onSave={handleSaveNotes}
+          />
 
-      <NotesModal
-        isOpen={isNotesModalOpen}
-        onClose={() => setIsNotesModalOpen(false)}
-        courseId={course.id}
-        initialNotes={course.notes}
-        onSave={handleSaveNotes}
-      />
+          <CompletionHistoryModal
+            isOpen={isHistoryModalOpen}
+            onClose={() => setIsHistoryModalOpen(false)}
+            courseTitle={course.title}
+            completionHistory={course.completionHistory || []}
+          />
 
-      <CompletionHistoryModal
-        isOpen={isHistoryModalOpen}
-        onClose={() => setIsHistoryModalOpen(false)}
-        courseTitle={course.title}
-        completionHistory={course.completionHistory || []}
-      />
-
-      <DeleteConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={() => {
-          if (course) {
-            deleteCourse(course.id);
-            window.location.href = "/";
-          }
-        }}
-        courseTitle={course?.title || ""}
-      />
+          <DeleteConfirmationModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={() => {
+              deleteCourse(course.id);
+              window.location.href = "/";
+            }}
+            courseTitle={course.title || ""}
+          />
+        </>
+      )}
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
