@@ -11,7 +11,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Course Tracker",
+  title: "Course Pilot",
   description: "Track your learning progress across all courses",
 };
 
