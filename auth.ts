@@ -33,6 +33,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           const userObj = existingUser.toObject();
+          userObj.id = existingUser._id.toString();
           delete userObj.password;
           console.log(userObj);
           return userObj;
