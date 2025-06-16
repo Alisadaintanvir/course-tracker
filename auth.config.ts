@@ -3,7 +3,6 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
-  providers: [], // Providers will be added in the main auth.ts file
   pages: {
     signIn: "/login",
   },

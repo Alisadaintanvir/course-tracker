@@ -2,7 +2,8 @@
 
 import { Plus, Sparkles, FolderOpen, Star, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import AddCourseModal from "../../components/AddCourseModal";
 import CourseScanner from "../../components/CourseScanner";
 import NotesModal from "../../components/NotesModal";
@@ -13,6 +14,8 @@ import { Course, Section, Video } from "../../types/course";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,36 +26,45 @@ export default function Home() {
   const [showActiveOnly, setShowActiveOnly] = useState(false);
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch("/api/courses");
-        if (!response.ok) {
-          throw new Error("Failed to fetch courses");
-        }
-        const data = await response.json();
-        setCourses(
-          data.map((course: Course) => ({
-            ...course,
-            lastAccessed: new Date(course.lastAccessed),
-            sections: course.sections.map((section: Section) => ({
-              ...section,
-              modules: section.modules.map((module: Video) => ({
-                ...module,
-                lastModified: new Date(module.lastModified),
-              })),
-            })),
-          }))
-        );
-      } catch (error) {
-        console.error("Error fetching courses:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // Redirect to login if not authenticated
+    if (status === "unauthenticated") {
+      router.push("/login");
+      return;
+    }
 
-    fetchCourses();
-  }, []);
+    // Only fetch courses if authenticated
+    if (status === "authenticated") {
+      const fetchCourses = async () => {
+        setIsLoading(true);
+        try {
+          const response = await fetch("/api/courses");
+          if (!response.ok) {
+            throw new Error("Failed to fetch courses");
+          }
+          const data = await response.json();
+          setCourses(
+            data.map((course: Course) => ({
+              ...course,
+              lastAccessed: new Date(course.lastAccessed),
+              sections: course.sections.map((section: Section) => ({
+                ...section,
+                modules: section.modules.map((module: Video) => ({
+                  ...module,
+                  lastModified: new Date(module.lastModified),
+                })),
+              })),
+            }))
+          );
+        } catch (error) {
+          console.error("Error fetching courses:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchCourses();
+    }
+  }, [status, router]);
 
   const handleAddCourse = async (courseData: {
     title: string;

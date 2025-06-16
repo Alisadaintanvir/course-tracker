@@ -25,15 +25,32 @@ export async function GET() {
       );
     }
 
-    await connectDB();
-    const courses = await Course.find({ userId: session.user.id }).sort({
-      lastAccessed: -1,
-    });
-    return NextResponse.json(courses.map(transformCourse));
+    try {
+      await connectDB();
+    } catch (error) {
+      console.error("Database connection error:", error);
+      return NextResponse.json(
+        { error: "Database connection failed" },
+        { status: 500 }
+      );
+    }
+
+    try {
+      const courses = await Course.find({ userId: session.user.id }).sort({
+        lastAccessed: -1,
+      });
+      return NextResponse.json(courses.map(transformCourse));
+    } catch (error) {
+      console.error("Error querying courses:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch courses" },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error("Error fetching courses:", error);
+    console.error("Error in GET /api/courses:", error);
     return NextResponse.json(
-      { error: "Failed to fetch courses" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -51,24 +68,40 @@ export async function POST(request: Request) {
       );
     }
 
-    await connectDB();
+    try {
+      await connectDB();
+    } catch (error) {
+      console.error("Database connection error:", error);
+      return NextResponse.json(
+        { error: "Database connection failed" },
+        { status: 500 }
+      );
+    }
 
-    const courseData = await request.json();
+    try {
+      const courseData = await request.json();
 
-    // Add userId to the course data
-    const courseWithUser = {
-      ...courseData,
-      userId: session.user.id,
-    };
+      // Add userId to the course data
+      const courseWithUser = {
+        ...courseData,
+        userId: session.user.id,
+      };
 
-    const course = await Course.create(courseWithUser);
-    console.log("Course created successfully");
+      const course = await Course.create(courseWithUser);
+      console.log("Course created successfully");
 
-    return NextResponse.json(transformCourse(course), { status: 201 });
+      return NextResponse.json(transformCourse(course), { status: 201 });
+    } catch (error) {
+      console.error("Error creating course:", error);
+      return NextResponse.json(
+        { error: "Failed to create course", details: error },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error("Error creating course:", error);
+    console.error("Error in POST /api/courses:", error);
     return NextResponse.json(
-      { error: "Failed to create course", details: error },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -86,32 +119,52 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await connectDB();
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
+    try {
+      await connectDB();
+    } catch (error) {
+      console.error("Database connection error:", error);
       return NextResponse.json(
-        { error: "Course ID is required" },
-        { status: 400 }
+        { error: "Database connection failed" },
+        { status: 500 }
       );
     }
 
-    // Only delete if the course belongs to the current user
-    const deletedCourse = await Course.findOneAndDelete({
-      _id: id,
-      userId: session.user.id,
-    });
+    try {
+      const { searchParams } = new URL(request.url);
+      const id = searchParams.get("id");
 
-    if (!deletedCourse) {
-      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+      if (!id) {
+        return NextResponse.json(
+          { error: "Course ID is required" },
+          { status: 400 }
+        );
+      }
+
+      // Only delete if the course belongs to the current user
+      const deletedCourse = await Course.findOneAndDelete({
+        _id: id,
+        userId: session.user.id,
+      });
+
+      if (!deletedCourse) {
+        return NextResponse.json(
+          { error: "Course not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(transformCourse(deletedCourse));
+    } catch (error) {
+      console.error("Error deleting course:", error);
+      return NextResponse.json(
+        { error: "Failed to delete course" },
+        { status: 500 }
+      );
     }
-
-    return NextResponse.json(transformCourse(deletedCourse));
   } catch (error) {
-    console.error("Error deleting course:", error);
+    console.error("Error in DELETE /api/courses:", error);
     return NextResponse.json(
-      { error: "Failed to delete course" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
@@ -129,41 +182,61 @@ export async function PATCH(request: Request) {
       );
     }
 
-    await connectDB();
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) {
+    try {
+      await connectDB();
+    } catch (error) {
+      console.error("Database connection error:", error);
       return NextResponse.json(
-        { error: "Course ID is required" },
-        { status: 400 }
+        { error: "Database connection failed" },
+        { status: 500 }
       );
     }
 
-    const courseData = await request.json();
+    try {
+      const { searchParams } = new URL(request.url);
+      const id = searchParams.get("id");
 
-    // Ensure we're updating the isActive field
-    const updateData = {
-      ...courseData,
-      isActive: courseData.isActive ?? false,
-    };
+      if (!id) {
+        return NextResponse.json(
+          { error: "Course ID is required" },
+          { status: 400 }
+        );
+      }
 
-    // Only update if the course belongs to the current user
-    const updatedCourse = await Course.findOneAndUpdate(
-      { _id: id, userId: session.user.id },
-      { $set: updateData },
-      { new: true }
-    );
+      const courseData = await request.json();
 
-    if (!updatedCourse) {
-      return NextResponse.json({ error: "Course not found" }, { status: 404 });
+      // Ensure we're updating the isActive field
+      const updateData = {
+        ...courseData,
+        isActive: courseData.isActive ?? false,
+      };
+
+      // Only update if the course belongs to the current user
+      const updatedCourse = await Course.findOneAndUpdate(
+        { _id: id, userId: session.user.id },
+        { $set: updateData },
+        { new: true }
+      );
+
+      if (!updatedCourse) {
+        return NextResponse.json(
+          { error: "Course not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(transformCourse(updatedCourse));
+    } catch (error) {
+      console.error("Error updating course:", error);
+      return NextResponse.json(
+        { error: "Failed to update course" },
+        { status: 500 }
+      );
     }
-
-    return NextResponse.json(transformCourse(updatedCourse));
   } catch (error) {
-    console.error("Error updating course:", error);
+    console.error("Error in PATCH /api/courses:", error);
     return NextResponse.json(
-      { error: "Failed to update course" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
