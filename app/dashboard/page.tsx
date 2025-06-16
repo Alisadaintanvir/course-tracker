@@ -1,7 +1,8 @@
 "use client";
 
-import { Plus, Sparkles, FolderOpen, Star } from "lucide-react";
+import { Plus, Sparkles, FolderOpen, Star, LogOut } from "lucide-react";
 import { useState, useEffect } from "react";
+import { signOut } from "next-auth/react";
 import AddCourseModal from "../../components/AddCourseModal";
 import CourseScanner from "../../components/CourseScanner";
 import NotesModal from "../../components/NotesModal";
@@ -247,13 +248,22 @@ export default function Home() {
   return (
     <div>
       <div className="container mx-auto px-4 py-12">
-        {/* Header */}
+        {/* Header with Logout */}
         <div className="mb-12">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="text-pink-500 dark:text-pink-400" size={24} />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 dark:from-pink-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
-              My Learning Journey
-            </h1>
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="text-pink-500 dark:text-pink-400" size={24} />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 dark:from-pink-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                My Learning Journey
+              </h1>
+            </div>
+            <button
+              onClick={() => signOut({ redirect: true, callbackUrl: "/" })}
+              className="flex items-center gap-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-4 py-2 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
           </div>
           <p className="text-gray-600 dark:text-gray-300 text-lg">
             Track your progress across all courses
