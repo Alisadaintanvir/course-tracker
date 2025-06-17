@@ -11,10 +11,13 @@ export async function POST(Request: Request) {
   if (!result.success) {
     const errors = result.error.flatten().fieldErrors;
 
-    return {
-      success: false,
-      errors,
-    };
+    return NextResponse.json(
+      {
+        success: false,
+        errors,
+      },
+      { status: 400 }
+    );
   }
 
   const { name, email, password } = result.data;
