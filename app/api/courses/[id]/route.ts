@@ -4,9 +4,10 @@ import { auth } from "@/auth";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
 
     // Check for authentication
@@ -18,7 +19,7 @@ export async function GET(
     }
 
     const course = await Course.findOne({
-      _id: params.id,
+      _id: id,
       userId: session.user.id,
     });
 
@@ -37,9 +38,10 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
 
     // Check for authentication
@@ -53,7 +55,7 @@ export async function PUT(
     const courseData = await request.json();
 
     const course = await Course.findOneAndUpdate(
-      { _id: params.id, userId: session.user.id },
+      { _id: id, userId: session.user.id },
       courseData,
       {
         new: true,
@@ -76,9 +78,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await auth();
 
     // Check for authentication
@@ -90,7 +93,7 @@ export async function DELETE(
     }
 
     const course = await Course.findOneAndDelete({
-      _id: params.id,
+      _id: id,
       userId: session.user.id,
     });
 

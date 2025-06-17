@@ -1,4 +1,4 @@
-import User from "@/schemas/User";
+import { User } from "@/schemas/User";
 import { comparePassword } from "./auth";
 import { connectDB } from "./mongodb";
 
