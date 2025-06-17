@@ -7,6 +7,7 @@ import { CourseProvider } from "../context/CourseContext";
 import { ToastContainer } from "react-toastify";
 import { ThemeScript } from "@/components/ThemeScript";
 import { AuthProvider } from "@/components/AuthProvider";
+import { connectDB } from "@/lib/mongodb";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,11 +16,12 @@ export const metadata: Metadata = {
   description: "Track your learning progress across all courses",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await connectDB();
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
