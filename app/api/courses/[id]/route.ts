@@ -1,10 +1,9 @@
-import { NextResponse } from "next/server";
-import { connectDB } from "@/lib/mongodb";
+import { NextRequest, NextResponse } from "next/server";
 import Course from "@/schemas/Course";
 import { auth } from "@/auth";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -18,7 +17,6 @@ export async function GET(
       );
     }
 
-    await connectDB();
     const course = await Course.findOne({
       _id: params.id,
       userId: session.user.id,
@@ -52,7 +50,6 @@ export async function PUT(
       );
     }
 
-    await connectDB();
     const courseData = await request.json();
 
     const course = await Course.findOneAndUpdate(
@@ -92,7 +89,6 @@ export async function DELETE(
       );
     }
 
-    await connectDB();
     const course = await Course.findOneAndDelete({
       _id: params.id,
       userId: session.user.id,
