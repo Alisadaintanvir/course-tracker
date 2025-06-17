@@ -1,7 +1,7 @@
 import { LoginForm } from "@/components/LoginForm";
 
 interface LoginPageProps {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ callbackUrl?: string }>;
 }
 
 async function LoginPage({ searchParams }: LoginPageProps) {
