@@ -14,7 +14,7 @@ import { Course, Section, Video } from "../../types/course";
 import LoadingSpinner from "../../components/LoadingSpinner";
 
 export default function Home() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -26,12 +26,6 @@ export default function Home() {
   const [showActiveOnly, setShowActiveOnly] = useState(false);
 
   useEffect(() => {
-    // Redirect to login if not authenticated
-    if (status === "unauthenticated") {
-      router.push("/login");
-      return;
-    }
-
     // Only fetch courses if authenticated
     if (status === "authenticated") {
       const fetchCourses = async () => {
