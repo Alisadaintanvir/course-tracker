@@ -1,48 +1,71 @@
 // auth.ts
 import NextAuth from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import { authConfig } from "./auth.config";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  ...authConfig,
   providers: [
-    Credentials({
+    CredentialsProvider({
       async authorize(credentials) {
-        // Import server-only dependencies inside the authorize function
-        const { connectDB } = await import("./lib/mongodb");
-        const { default: User } = await import("./schemas/User");
-        const { comparePassword } = await import("./lib/auth");
-
         try {
-          await connectDB();
-          const existingUser = await User.findOne({ email: credentials.email });
-
-          if (!existingUser) {
-            console.log("No user found with that email.");
-            return null;
-          }
-
-          const isPasswordValid = await comparePassword(
-            credentials.password as string,
-            existingUser.password
+          const res = await fetch(
+            `${process.env.NEXTAUTH_URL}/api/auth/login`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email: credentials?.email,
+                password: credentials?.password,
+              }),
+            }
           );
 
-          if (!isPasswordValid) {
-            console.log("Password is not valid.");
-            return null;
+          const user = await res.json();
+
+          if (res.ok && user) {
+            return user;
           }
 
-          const userObj = existingUser.toObject();
-          userObj.id = existingUser._id.toString();
-          delete userObj.password;
-          return userObj;
+          return null;
         } catch (error) {
           console.error("Authentication error:", error);
-          // In production, you might want to throw a more generic error
-          // For now, returning null is safe for the login flow.
           return null;
         }
       },
     }),
   ],
+  pages: {
+    signIn: "/login",
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+  },
+  cookies: {
+    sessionToken: {
+      name: "authjs.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
+  callbacks: {
+    // Note: The authorize callback is not here
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token?.id) {
+        session.user.id = token.id as string;
+      }
+      return session;
+    },
+  },
 });
