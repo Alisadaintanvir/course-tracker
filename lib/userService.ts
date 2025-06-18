@@ -1,8 +1,10 @@
 import { User } from "@/schemas/User";
 import { comparePassword } from "./auth";
+import { connectDB } from "./mongodb";
 
 export const userService = async (email: string, password: string) => {
   try {
+    await connectDB();
     const existingUser = await User.findOne({ email });
 
     if (!existingUser) {
