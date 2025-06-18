@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import Course from "@/schemas/Course";
 import { auth } from "@/auth";
+import { connectDB } from "@/lib/mongodb";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Connect to database first
+    await connectDB();
+    
     const { id } = await params;
     const session = await auth();
 
