@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
 
 interface Module {
   name: string;
@@ -24,100 +22,76 @@ interface CourseStructure {
 
 export async function POST(request: Request) {
   try {
-    const { coursePath } = await request.json();
-
-    if (!coursePath) {
+    const formData = await request.formData();
+    const files = formData.getAll('files') as File[];
+    
+    if (!files || files.length === 0) {
       return NextResponse.json(
-        { error: "Course path is required" },
+        { error: "No files uploaded" },
         { status: 400 }
       );
     }
 
-    // Normalize the path for Windows
-    const normalizedPath = coursePath.replace(/[\/\\]/g, path.sep);
+    // Group files by their folder structure
+    const sectionsMap = new Map<string, Module[]>();
+    const rootModules: Module[] = [];
 
-    console.log("Processing path:", {
-      originalPath: coursePath,
-      normalizedPath,
-    });
+    for (const file of files) {
+      // Skip non-video files
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      if (!ext || !["mp4", "avi", "mov", "wmv", "mkv"].includes(ext)) {
+        continue;
+      }
 
-    // Check if the path exists
-    if (!fs.existsSync(normalizedPath)) {
-      return NextResponse.json(
-        {
-          error: `Course path does not exist: ${coursePath}. Please make sure the path is correct and the directory exists.`,
-        },
-        { status: 400 }
-      );
-    }
+      // Extract folder structure from webkitRelativePath
+      const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+      const pathParts = relativePath.split('/');
+      
+      const videoModule: Module = {
+        name: file.name,
+        path: relativePath,
+        size: file.size,
+        lastModified: new Date(file.lastModified),
+      };
 
-    // Get directory name as course name
-    const courseName = path.basename(normalizedPath);
-
-    // Scan the directory structure
-    const structure: CourseStructure = {
-      name: courseName,
-      path: normalizedPath,
-      sections: [],
-      modules: [],
-    };
-
-    // Read directory contents
-    const items = fs.readdirSync(normalizedPath);
-
-    // Process each item in the directory
-    for (const item of items) {
-      const itemPath = path.join(normalizedPath, item);
-      const stats = fs.statSync(itemPath);
-
-      if (stats.isDirectory()) {
-        // It's a section
-        const section: Section = {
-          name: item,
-          path: itemPath,
-          modules: [],
-        };
-
-        // Read section contents
-        const sectionItems = fs.readdirSync(itemPath);
-        for (const sectionItem of sectionItems) {
-          const modulePath = path.join(itemPath, sectionItem);
-          const moduleStats = fs.statSync(modulePath);
-
-          if (moduleStats.isFile()) {
-            // Only include video files
-            const ext = path.extname(sectionItem).toLowerCase();
-            if ([".mp4", ".avi", ".mov", ".wmv", ".mkv"].includes(ext)) {
-              section.modules.push({
-                name: sectionItem,
-                path: modulePath,
-                size: moduleStats.size,
-                lastModified: moduleStats.mtime,
-              });
-            }
-          }
+      if (pathParts.length > 1) {
+        // File is in a subfolder (section)
+        const sectionName = pathParts[pathParts.length - 2]; // Get parent folder name
+        
+        if (!sectionsMap.has(sectionName)) {
+          sectionsMap.set(sectionName, []);
         }
-
-        structure.sections.push(section);
-      } else if (stats.isFile()) {
-        // It's a root level module (only include video files)
-        const ext = path.extname(item).toLowerCase();
-        if ([".mp4", ".avi", ".mov", ".wmv", ".mkv"].includes(ext)) {
-          structure.modules.push({
-            name: item,
-            path: itemPath,
-            size: stats.size,
-            lastModified: stats.mtime,
-          });
-        }
+        sectionsMap.get(sectionName)!.push(videoModule);
+      } else {
+        // File is in root
+        rootModules.push(videoModule);
       }
     }
+
+    // Convert sections map to array
+    const sections: Section[] = Array.from(sectionsMap.entries()).map(([name, modules]) => ({
+      name,
+      path: name,
+      modules,
+    }));
+
+    // Get course name from the first file's path or use default
+    const firstFile = files[0];
+    const firstPath = (firstFile as File & { webkitRelativePath?: string }).webkitRelativePath || firstFile.name;
+    const courseName = firstPath.split('/')[0] || 'Uploaded Course';
+
+    const structure: CourseStructure = {
+      name: courseName,
+      path: courseName,
+      sections,
+      modules: rootModules,
+    };
 
     return NextResponse.json(structure);
   } catch (error) {
     console.error("Error scanning course:", error);
     return NextResponse.json(
-      { error: "Failed to scan course directory" },
+      { error: "Failed to scan course files" },
       { status: 500 }
     );
   }

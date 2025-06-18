@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FolderOpen, Video } from "lucide-react";
+import { FolderOpen, Video, HardDrive, Clock } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionContent,
@@ -35,9 +36,11 @@ interface CourseStructure {
   path: string;
   sections: Section[];
   modules: Video[];
+  totalSize: number;
+  totalFiles: number;
 }
 
-interface CourseScannerProps {
+interface MetadataCourseScannerProps {
   onAddCourse: (courseData: {
     title: string;
     category: string;
@@ -48,13 +51,12 @@ interface CourseScannerProps {
   }) => Promise<boolean>;
 }
 
-export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
+export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseScannerProps) {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [courseName, setCourseName] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [courseStructure, setCourseStructure] =
-    useState<CourseStructure | null>(null);
+  const [courseStructure, setCourseStructure] = useState<CourseStructure | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -62,10 +64,77 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
     setError(null);
     setCourseStructure(null);
   };
+  const buildDirectoryStructure = (files: FileList) => {
+    interface DirectoryNode {
+      name: string;
+      path: string;
+      type: 'directory' | 'file';
+      size?: number;
+      lastModified?: Date;
+      children?: Record<string, DirectoryNode>;
+    }
+    
+    const structure: Record<string, DirectoryNode> = {};
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const filePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
+      const pathParts = filePath.split('/');
+      
+      let current = structure;
+      
+      // Build nested structure
+      for (let j = 0; j < pathParts.length - 1; j++) {
+        const part = pathParts[j];
+        if (!current[part]) {
+          current[part] = {
+            name: part,
+            path: pathParts.slice(0, j + 1).join('/'),
+            type: 'directory',
+            children: {}
+          };
+        }
+        current = current[part].children!;
+      }
+      
+      // Add the file
+      const fileName = pathParts[pathParts.length - 1];
+      current[fileName] = {
+        name: fileName,
+        path: filePath,
+        type: 'file',
+        size: file.size,
+        lastModified: new Date(file.lastModified)
+      };
+    }    // Convert to array format
+    function convertToArray(obj: Record<string, DirectoryNode>): unknown[] {
+      return Object.values(obj).map((item: DirectoryNode) => {
+        if (item.type === 'directory' && item.children) {
+          return {
+            name: item.name,
+            path: item.path,
+            type: item.type,
+            size: item.size,
+            lastModified: item.lastModified,
+            children: convertToArray(item.children)
+          };
+        }
+        return {
+          name: item.name,
+          path: item.path,
+          type: item.type,
+          size: item.size,
+          lastModified: item.lastModified
+        };
+      });
+    }
+    
+    return convertToArray(structure);
+  };
 
   const handleScan = async () => {
     if (!selectedFiles || selectedFiles.length === 0) {
-      setError("Please select course files");
+      setError("Please select a course folder");
       return;
     }
 
@@ -73,12 +142,14 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
     setError(null);
 
     try {
+      // Build directory structure from selected files (metadata only)
+      const directoryStructure = buildDirectoryStructure(selectedFiles);
+      
+      // Send only metadata to the API
       const formData = new FormData();
-      for (let i = 0; i < selectedFiles.length; i++) {
-        formData.append('files', selectedFiles[i]);
-      }
+      formData.append('metadata', JSON.stringify(directoryStructure));
 
-      const response = await fetch("/api/scan-course", {
+      const response = await fetch("/api/scan-metadata", {
         method: "POST",
         body: formData,
       });
@@ -86,7 +157,7 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to scan course");
+        throw new Error(data.error || "Failed to scan course metadata");
       }
 
       setCourseStructure(data);
@@ -104,20 +175,16 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
   const handleAddToCourses = async () => {
     if (!courseStructure) return;
 
-    // Calculate total modules from sections
-    const totalModules = courseStructure.sections.reduce(
-      (total, section) => total + section.modules.length,
-      0
-    );
-
     const courseData = {
-      title: courseName || courseStructure.name, // Use custom name if set, otherwise use scanned name
-      category: "Web Development", // You can make this dynamic if needed
-      description: `Course with ${totalModules} videos across ${courseStructure.sections.length} sections`,
-      totalModules,
+      title: courseName || courseStructure.name,
+      category: "Web Development",
+      description: `Course with ${courseStructure.totalFiles} videos (${formatFileSize(courseStructure.totalSize)}) across ${courseStructure.sections.length} sections`,
+      totalModules: courseStructure.totalFiles,
       sections: courseStructure.sections,
       isCompleted: false,
-    };    try {
+    };
+
+    try {
       const success = await onAddCourse(courseData);
       if (success) {
         setSelectedFiles(null);
@@ -143,14 +210,29 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-      <div className="space-y-4">        <div>
+      <div className="space-y-4">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <HardDrive className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="font-semibold text-blue-800 dark:text-blue-200">
+              Metadata-Only Scanning
+            </h3>
+          </div>
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            This approach only reads file names, sizes, and folder structure - no actual file content is uploaded.
+            Perfect for large courses (30-40GB+) as it&apos;s lightning fast and uses minimal bandwidth.
+          </p>
+        </div>
+
+        <div>
           <label
             htmlFor="courseFiles"
             className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
           >
-            Select Course Files
+            Select Course Folder
           </label>
-          <div className="space-y-2">            <input
+          <div className="space-y-2">
+            <input
               type="file"
               id="courseFiles"
               multiple
@@ -159,20 +241,21 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
               className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Select a folder containing your course videos. The folder structure will be preserved as sections.
+              Select a folder containing your course videos. Only file metadata (names, sizes, structure) will be processed - no files uploaded!
             </p>
             {selectedFiles && selectedFiles.length > 0 && (
-              <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                {selectedFiles.length} files selected
-              </p>
+              <div className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
+                <Clock className="w-4 h-4" />
+                {selectedFiles.length} files selected (metadata only)
+              </div>
             )}
-            <button
+            <Button
               onClick={handleScan}
               disabled={isScanning || !selectedFiles || selectedFiles.length === 0}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full"
             >
-              {isScanning ? "Scanning..." : "Scan Course"}
-            </button>
+              {isScanning ? "Scanning Structure..." : "Scan Course Structure"}
+            </Button>
           </div>
           {error && (
             <p className="mt-2 text-sm text-red-600 dark:text-red-400">
@@ -200,11 +283,31 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
               />
             </div>
 
-            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-              <FolderOpen size={20} />
-              <span className="font-medium">
-                {courseName || courseStructure.name}
-              </span>
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-2">
+                <FolderOpen size={20} />
+                <span className="font-medium">
+                  {courseName || courseStructure.name}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Total Videos:</span>
+                  <span className="ml-2 font-medium">{courseStructure.totalFiles}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Total Size:</span>
+                  <span className="ml-2 font-medium">{formatFileSize(courseStructure.totalSize)}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Sections:</span>
+                  <span className="ml-2 font-medium">{courseStructure.sections.length}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 dark:text-gray-400">Root Videos:</span>
+                  <span className="ml-2 font-medium">{courseStructure.modules.length}</span>
+                </div>
+              </div>
             </div>
 
             <ScrollArea className="h-[400px] rounded-lg border border-gray-200 dark:border-gray-700">
@@ -287,12 +390,12 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
               </div>
             </ScrollArea>
 
-            <button
+            <Button
               onClick={handleAddToCourses}
-              className="w-full px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+              className="w-full"
             >
               Add to Courses
-            </button>
+            </Button>
           </div>
         )}
       </div>
