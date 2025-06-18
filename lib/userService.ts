@@ -1,10 +1,8 @@
 import { User } from "@/schemas/User";
 import { comparePassword } from "./auth";
-import { connectDB } from "./mongodb";
 
 export const userService = async (email: string, password: string) => {
   try {
-    await connectDB();
     const existingUser = await User.findOne({ email });
 
     if (!existingUser) {
@@ -22,6 +20,7 @@ export const userService = async (email: string, password: string) => {
 
     // Return user without password
     const userObj = existingUser.toObject();
+    userObj.id = userObj._id.toString();
     delete userObj.password;
     return userObj;
   } catch (err) {

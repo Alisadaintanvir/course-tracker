@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "./auth";
+import authConfig from "./auth.config";
+import NextAuth from "next-auth";
 
 const authRoutes = ["/login", "/signup"];
 const protectedRoutes = ["/dashboard"];
 
+export const { auth: middlewareAuth } = NextAuth(authConfig);
+
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const session = await auth();
+  const session = await middlewareAuth();
+  // console.log("Session in middleware:", session);
 
   // Check if it's an auth route (login/registration)
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));

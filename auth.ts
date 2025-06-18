@@ -1,33 +1,23 @@
 // auth.ts
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { userService } from "./lib/userService";
+import authConfig from "./auth.config";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [
     CredentialsProvider({
       async authorize(credentials) {
         try {
-          const res = await fetch(
-            `${process.env.NEXTAUTH_URL}/api/auth/login`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                email: credentials?.email,
-                password: credentials?.password,
-              }),
-            }
+          const user = await userService(
+            credentials?.email as string,
+            credentials?.password as string
           );
-
-          const user = await res.json();
-
-          if (res.ok && user) {
-            return user;
+          if (!user) {
+            throw new Error("Invalid email or password");
           }
-
-          return null;
+          return user;
         } catch (error) {
           console.error("Authentication error:", error);
           return null;
@@ -40,29 +30,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   session: {
     strategy: "jwt",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-  },
-  cookies: {
-    sessionToken: {
-      name: "authjs.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
   },
   callbacks: {
-    // Note: The authorize callback is not here
     async jwt({ token, user }) {
+      // If the user object exists (during sign in), add the user id to the token
       if (user) {
-        token.id = user.id;
+        token.id = user.id; // Assuming your user object has an 'id' property
       }
       return token;
     },
     async session({ session, token }) {
-      if (token?.id) {
+      // Add the user id to the session object
+      if (session.user && token.id) {
         session.user.id = token.id as string;
       }
       return session;
