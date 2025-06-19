@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 interface DirectoryStructure {
   name: string;
   path: string;
-  type: 'file' | 'directory';
+  type: "file" | "directory";
   size?: number;
   lastModified?: Date;
   children?: DirectoryStructure[];
@@ -34,8 +34,8 @@ interface CourseStructure {
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    const metadataJson = formData.get('metadata') as string;
-    
+    const metadataJson = formData.get("metadata") as string;
+
     if (!metadataJson) {
       return NextResponse.json(
         { error: "No metadata provided" },
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
     // Parse the directory structure metadata
     const directoryStructure: DirectoryStructure[] = JSON.parse(metadataJson);
-    
+
     if (!directoryStructure || directoryStructure.length === 0) {
       return NextResponse.json(
         { error: "Invalid directory structure" },
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
 
     // Process the directory structure to extract course info
     const courseStructure = await processDirectoryStructure(directoryStructure);
-    
+
     return NextResponse.json(courseStructure);
   } catch (error) {
     console.error("Error processing course metadata:", error);
@@ -66,37 +66,44 @@ export async function POST(request: Request) {
   }
 }
 
-async function processDirectoryStructure(structure: DirectoryStructure[]): Promise<CourseStructure> {
+async function processDirectoryStructure(
+  structure: DirectoryStructure[]
+): Promise<CourseStructure> {
   const sectionsMap = new Map<string, Module[]>();
   const rootModules: Module[] = [];
   let totalSize = 0;
   let totalFiles = 0;
-  
+
   // Get course name from the root directory
   const rootDir = structure[0];
-  const courseName = rootDir?.name || 'Course';
-    function processDirectory(items: DirectoryStructure[]) {
+  const courseName = rootDir?.name || "Course";
+  function processDirectory(items: DirectoryStructure[]) {
     for (const item of items) {
-      if (item.type === 'file') {
+      if (item.type === "file") {
         // Check if it's a video file
-        const ext = item.name.split('.').pop()?.toLowerCase();
-        if (ext && ['mp4', 'avi', 'mov', 'wmv', 'mkv', 'webm', 'flv', 'm4v'].includes(ext)) {
+        const ext = item.name.split(".").pop()?.toLowerCase();
+        if (
+          ext &&
+          ["mp4", "avi", "mov", "wmv", "mkv", "webm", "flv", "m4v"].includes(
+            ext
+          )
+        ) {
           const videoModule: Module = {
             name: item.name,
             path: item.path,
             size: item.size || 0,
             lastModified: item.lastModified || new Date(),
           };
-          
+
           totalSize += videoModule.size;
           totalFiles++;
-          
+
           // Determine if this is in a section (subdirectory) or root level
-          const pathParts = item.path.split('/').filter(part => part);
+          const pathParts = item.path.split("/").filter((part) => part);
           if (pathParts.length > 1) {
             // File is in a subdirectory (section)
             const sectionName = pathParts[pathParts.length - 2];
-            
+
             if (!sectionsMap.has(sectionName)) {
               sectionsMap.set(sectionName, []);
             }
@@ -106,27 +113,35 @@ async function processDirectoryStructure(structure: DirectoryStructure[]): Promi
             rootModules.push(videoModule);
           }
         }
-      } else if (item.type === 'directory' && item.children) {
+      } else if (item.type === "directory" && item.children) {
         // Recursively process subdirectories
         processDirectory(item.children);
       }
     }
   }
-  
+
   processDirectory(structure);
-  
+
   // Convert sections map to array
-  const sections: Section[] = Array.from(sectionsMap.entries()).map(([name, modules]) => ({
-    name,
-    path: name,
-    modules: modules.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })),
-  }));
-  
+  const sections: Section[] = Array.from(sectionsMap.entries()).map(
+    ([name, modules]) => ({
+      name,
+      path: name,
+      modules: modules.sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { numeric: true })
+      ),
+    })
+  );
+
   return {
     name: courseName,
     path: courseName,
-    sections: sections.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })),
-    modules: rootModules.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true })),
+    sections: sections.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true })
+    ),
+    modules: rootModules.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true })
+    ),
     totalSize,
     totalFiles,
   };

@@ -5,18 +5,15 @@ import { Course } from "@/types/course-page";
 
 export function useCourseData() {
   const params = useParams();
-  const searchParams = useSearchParams();
-  const { getCourse, updateCourse, toggleCourseCompletion, deleteCourse } =
+  const searchParams = useSearchParams();  const { getCourse, updateCourse, toggleCourseCompletion, deleteCourse, isLoading: contextLoading } =
     useCourse();
 
   const [course, setCourse] = useState<Course | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [expandedSection, setExpandedSection] = useState<number | null>(null);
 
   const viewNotes = searchParams.get("view") === "notes";
 
   useEffect(() => {
-    setIsLoading(true);
     const foundCourse = getCourse(params.id as string);
     if (foundCourse) {
       const courseWithDates = {
@@ -31,9 +28,11 @@ export function useCourseData() {
         })),
       };
       setCourse(courseWithDates);
+    } else if (!contextLoading) {
+      // Only set course to null if we're not loading courses from the API
+      setCourse(null);
     }
-    setIsLoading(false);
-  }, [params.id, getCourse]);
+  }, [params.id, getCourse, contextLoading]);
 
   useEffect(() => {
     if (course) {
@@ -156,11 +155,9 @@ export function useCourseData() {
     } catch {
       return defaultValue;
     }
-  };
-
-  return {
+  };  return {
     course,
-    isLoading,
+    isLoading: contextLoading,
     viewNotes,
     expandedSection,
     handleSectionChange,

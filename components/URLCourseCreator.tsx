@@ -30,17 +30,21 @@ interface URLCourseCreatorProps {
   }) => Promise<boolean>;
 }
 
-export default function URLCourseCreator({ onAddCourse }: URLCourseCreatorProps) {
+export default function URLCourseCreator({
+  onAddCourse,
+}: URLCourseCreatorProps) {
   const [courseName, setCourseName] = useState("");
   const [courseCategory, setCourseCategory] = useState("Web Development");
-  const [courseType, setCourseType] = useState<'manual-urls' | 'youtube-playlist'>('manual-urls');
+  const [courseType, setCourseType] = useState<
+    "manual-urls" | "youtube-playlist"
+  >("manual-urls");
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [videoUrls, setVideoUrls] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const validateYouTubeUrl = (url: string): boolean => {
-    return url.includes('youtube.com') && url.includes('list=');
+    return url.includes("youtube.com") && url.includes("list=");
   };
 
   const validateVideoUrl = (url: string): boolean => {
@@ -58,7 +62,7 @@ export default function URLCourseCreator({ onAddCourse }: URLCourseCreatorProps)
       return;
     }
 
-    if (courseType === 'youtube-playlist') {
+    if (courseType === "youtube-playlist") {
       if (!playlistUrl.trim()) {
         setError("YouTube playlist URL is required");
         return;
@@ -72,12 +76,16 @@ export default function URLCourseCreator({ onAddCourse }: URLCourseCreatorProps)
         setError("Video URLs are required");
         return;
       }
-      
-      const urls = videoUrls.split('\n').filter(url => url.trim());
-      const invalidUrls = urls.filter(url => !validateVideoUrl(url.trim()));
-      
+
+      const urls = videoUrls.split("\n").filter((url) => url.trim());
+      const invalidUrls = urls.filter((url) => !validateVideoUrl(url.trim()));
+
       if (invalidUrls.length > 0) {
-        setError(`Invalid URLs found: ${invalidUrls.slice(0, 3).join(', ')}${invalidUrls.length > 3 ? '...' : ''}`);
+        setError(
+          `Invalid URLs found: ${invalidUrls.slice(0, 3).join(", ")}${
+            invalidUrls.length > 3 ? "..." : ""
+          }`
+        );
         return;
       }
     }
@@ -91,22 +99,26 @@ export default function URLCourseCreator({ onAddCourse }: URLCourseCreatorProps)
       let sections: Section[] = [];
       let totalModules = 0;
 
-      if (courseType === 'youtube-playlist') {
+      if (courseType === "youtube-playlist") {
         // For YouTube playlists, we'll create a single section
-        sections = [{
-          name: "Playlist Videos",
-          path: "playlist",
-          modules: [{
-            name: "YouTube Playlist",
-            path: playlistUrl,
-            size: 0,
-            lastModified: new Date(),
-          }]
-        }];
+        sections = [
+          {
+            name: "Playlist Videos",
+            path: "playlist",
+            modules: [
+              {
+                name: "YouTube Playlist",
+                path: playlistUrl,
+                size: 0,
+                lastModified: new Date(),
+              },
+            ],
+          },
+        ];
         totalModules = 1; // We don't know the actual count without API access
       } else {
         // For manual URLs, create individual modules
-        const urls = videoUrls.split('\n').filter(url => url.trim());
+        const urls = videoUrls.split("\n").filter((url) => url.trim());
         const modules: Video[] = urls.map((url, index) => ({
           name: `Video ${index + 1}`,
           path: url.trim(),
@@ -114,18 +126,22 @@ export default function URLCourseCreator({ onAddCourse }: URLCourseCreatorProps)
           lastModified: new Date(),
         }));
 
-        sections = [{
-          name: "Course Videos",
-          path: "videos",
-          modules
-        }];
+        sections = [
+          {
+            name: "Course Videos",
+            path: "videos",
+            modules,
+          },
+        ];
         totalModules = modules.length;
       }
 
       const courseData = {
         title: courseName,
         category: courseCategory,
-        description: `${courseType === 'youtube-playlist' ? 'YouTube playlist' : 'URL-based'} course with ${totalModules} videos`,
+        description: `${
+          courseType === "youtube-playlist" ? "YouTube playlist" : "URL-based"
+        } course with ${totalModules} videos`,
         totalModules,
         sections,
         isCompleted: false,
@@ -153,7 +169,7 @@ export default function URLCourseCreator({ onAddCourse }: URLCourseCreatorProps)
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         Create Course from URLs
       </h3>
-      
+
       <div className="space-y-4">
         {/* Course Name */}
         <div>
@@ -192,8 +208,8 @@ export default function URLCourseCreator({ onAddCourse }: URLCourseCreatorProps)
               <input
                 type="radio"
                 value="manual-urls"
-                checked={courseType === 'manual-urls'}
-                onChange={(e) => setCourseType(e.target.value as 'manual-urls')}
+                checked={courseType === "manual-urls"}
+                onChange={(e) => setCourseType(e.target.value as "manual-urls")}
                 className="mr-2"
               />
               Individual Video URLs
@@ -202,8 +218,10 @@ export default function URLCourseCreator({ onAddCourse }: URLCourseCreatorProps)
               <input
                 type="radio"
                 value="youtube-playlist"
-                checked={courseType === 'youtube-playlist'}
-                onChange={(e) => setCourseType(e.target.value as 'youtube-playlist')}
+                checked={courseType === "youtube-playlist"}
+                onChange={(e) =>
+                  setCourseType(e.target.value as "youtube-playlist")
+                }
                 className="mr-2"
               />
               YouTube Playlist
@@ -212,7 +230,7 @@ export default function URLCourseCreator({ onAddCourse }: URLCourseCreatorProps)
         </div>
 
         {/* URL Input based on type */}
-        {courseType === 'youtube-playlist' ? (
+        {courseType === "youtube-playlist" ? (
           <div>
             <Label htmlFor="playlistUrl">YouTube Playlist URL</Label>
             <Input
@@ -246,15 +264,18 @@ https://vimeo.com/...`}
         )}
 
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">
-            {error}
-          </p>
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         )}
 
         <Button
           onClick={handleSubmit}
-          disabled={isProcessing || !courseName.trim() || 
-            (courseType === 'youtube-playlist' ? !playlistUrl.trim() : !videoUrls.trim())}
+          disabled={
+            isProcessing ||
+            !courseName.trim() ||
+            (courseType === "youtube-playlist"
+              ? !playlistUrl.trim()
+              : !videoUrls.trim())
+          }
           className="w-full"
         >
           <Link className="w-4 h-4 mr-2" />

@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 
 interface CourseContextType {
   courses: Course[];
+  isLoading: boolean;
   getCourse: (id: string) => Course | undefined;
   addCourse: (course: Omit<Course, "id">) => Promise<void>;
   updateCourse: (course: Course) => Promise<void>;
@@ -18,6 +19,7 @@ const CourseContext = createContext<CourseContextType | undefined>(undefined);
 export function CourseProvider({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Only fetch courses if user is authenticated
@@ -26,17 +28,24 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
     } else if (status === "unauthenticated") {
       // Clear courses when user is not authenticated
       setCourses([]);
+      setIsLoading(false);
+    } else if (status === "loading") {
+      // Set loading when session is still being determined
+      setIsLoading(true);
     }
   }, [status]);
 
   const fetchCourses = async () => {
     try {
+      setIsLoading(true);
       const response = await fetch("/api/courses");
       if (!response.ok) throw new Error("Failed to fetch courses");
       const data = await response.json();
       setCourses(data);
     } catch (error) {
       console.error("Error fetching courses:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -115,6 +124,7 @@ export function CourseProvider({ children }: { children: React.ReactNode }) {
     <CourseContext.Provider
       value={{
         courses,
+        isLoading,
         getCourse,
         addCourse,
         updateCourse,

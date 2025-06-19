@@ -10,7 +10,7 @@ export async function GET(
   try {
     // Connect to database first
     await connectDB();
-    
+
     const { id } = await params;
     const session = await auth();
 

@@ -75,7 +75,7 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
     try {
       const formData = new FormData();
       for (let i = 0; i < selectedFiles.length; i++) {
-        formData.append('files', selectedFiles[i]);
+        formData.append("files", selectedFiles[i]);
       }
 
       const response = await fetch("/api/scan-course", {
@@ -117,15 +117,18 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
       totalModules,
       sections: courseStructure.sections,
       isCompleted: false,
-    };    try {
+    };
+    try {
       const success = await onAddCourse(courseData);
       if (success) {
         setSelectedFiles(null);
         setCourseName("");
         setCourseStructure(null);
         // Reset file input
-        const fileInput = document.getElementById('courseFiles') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
+        const fileInput = document.getElementById(
+          "courseFiles"
+        ) as HTMLInputElement;
+        if (fileInput) fileInput.value = "";
       } else {
         setError("A course with this name already exists");
       }
@@ -143,14 +146,18 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-      <div className="space-y-4">        <div>
+      <div className="space-y-4">
+        {" "}
+        <div>
           <label
             htmlFor="courseFiles"
             className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
           >
             Select Course Files
           </label>
-          <div className="space-y-2">            <input
+          <div className="space-y-2">
+            {" "}
+            <input
               type="file"
               id="courseFiles"
               multiple
@@ -159,7 +166,8 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
               className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Select a folder containing your course videos. The folder structure will be preserved as sections.
+              Select a folder containing your course videos. The folder
+              structure will be preserved as sections.
             </p>
             {selectedFiles && selectedFiles.length > 0 && (
               <p className="text-sm font-medium text-green-600 dark:text-green-400">
@@ -168,7 +176,9 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
             )}
             <button
               onClick={handleScan}
-              disabled={isScanning || !selectedFiles || selectedFiles.length === 0}
+              disabled={
+                isScanning || !selectedFiles || selectedFiles.length === 0
+              }
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isScanning ? "Scanning..." : "Scan Course"}
@@ -180,7 +190,6 @@ export default function CourseScanner({ onAddCourse }: CourseScannerProps) {
             </p>
           )}
         </div>
-
         {courseStructure && (
           <div className="mt-6 space-y-4">
             <div>

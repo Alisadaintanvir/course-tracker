@@ -32,12 +32,11 @@ export default function CoursePage() {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(viewNotes);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="flex justify-center items-center min-h-[600px]">
-          <LoadingSpinner size={64} text="Loading course details..." />
+          <LoadingSpinner size={64} text="Loading course..." />
         </div>
       </div>
     );

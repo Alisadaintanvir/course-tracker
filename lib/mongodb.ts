@@ -41,9 +41,7 @@ export async function connectDB() {
       minPoolSize: 5, // Maintain a minimum of 5 socket connections
       maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity      // Retry writes
       retryWrites: true,
-    };
-
-    console.log("Connecting to MongoDB...");
+    };    console.log("Connecting to MongoDB...");
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
       console.log("MongoDB connected successfully");
       return mongoose;

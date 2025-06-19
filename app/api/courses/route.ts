@@ -16,10 +16,8 @@ const transformCourse = (course: Document & ICourse) => {
 export async function GET() {
   try {
     // Connect to database first
-    console.log("Connecting to database...");
     await connectDB();
-    console.log("Database connected, fetching courses...");
-    
+
     const session = await auth();
 
     // Check for authentication
@@ -30,34 +28,43 @@ export async function GET() {
       );
     }
 
-    console.log("Fetching courses for user:", session.user.id);
     const courses = await Course.find({ userId: session.user.id }).sort({
       lastAccessed: -1,
     });
-    console.log(`Found ${courses.length} courses`);
-    
+
     return NextResponse.json(courses.map(transformCourse));
   } catch (error) {
     console.error("Error in GET /api/courses:", error);
-    
+
     // Provide more specific error information
     if (error instanceof Error) {
-      if (error.message.includes('buffering timed out')) {
+      if (error.message.includes("buffering timed out")) {
         return NextResponse.json(
-          { error: "Database connection timeout. Please check your MongoDB connection." },
+          {
+            error:
+              "Database connection timeout. Please check your MongoDB connection.",
+          },
           { status: 503 }
         );
       }
-      if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
+      if (
+        error.message.includes("ENOTFOUND") ||
+        error.message.includes("ECONNREFUSED")
+      ) {
         return NextResponse.json(
-          { error: "Cannot connect to database. Please check your MONGODB_URI." },
+          {
+            error: "Cannot connect to database. Please check your MONGODB_URI.",
+          },
           { status: 503 }
         );
       }
     }
-    
+
     return NextResponse.json(
-      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
+      {
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
@@ -67,7 +74,7 @@ export async function POST(request: Request) {
   try {
     // Connect to database first
     await connectDB();
-    
+
     const session = await auth();
 
     // Check for authentication
@@ -76,8 +83,7 @@ export async function POST(request: Request) {
         { error: "Authentication required" },
         { status: 401 }
       );
-    }
-    const courseData = await request.json();
+    }    const courseData = await request.json();
 
     // Add userId to the course data
     const courseWithUser = {
@@ -86,7 +92,6 @@ export async function POST(request: Request) {
     };
 
     const course = await Course.create(courseWithUser);
-    console.log("Course created successfully");
 
     return NextResponse.json(transformCourse(course), { status: 201 });
   } catch (error) {
@@ -144,7 +149,7 @@ export async function PATCH(request: Request) {
   try {
     // Connect to database first
     await connectDB();
-    
+
     const session = await auth();
 
     // Check for authentication

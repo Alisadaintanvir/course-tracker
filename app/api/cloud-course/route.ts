@@ -43,10 +43,10 @@ export async function POST(request: Request) {
     let structure: CloudCourseStructure;
 
     switch (courseType) {
-      case 'youtube-playlist':
+      case "youtube-playlist":
         structure = await handleYouTubePlaylist(courseUrl);
         break;
-      case 'manual-urls':
+      case "manual-urls":
         structure = await handleManualUrls(courseUrl);
         break;
       default:
@@ -66,32 +66,38 @@ export async function POST(request: Request) {
   }
 }
 
-async function handleYouTubePlaylist(playlistUrl: string): Promise<CloudCourseStructure> {
+async function handleYouTubePlaylist(
+  playlistUrl: string
+): Promise<CloudCourseStructure> {
   // This would require YouTube API integration
   // For now, return a placeholder structure
   const playlistId = extractPlaylistId(playlistUrl);
-  
+
   return {
     name: `YouTube Playlist ${playlistId}`,
-    sections: [{
-      name: "Main Playlist",
-      modules: [
-        {
-          name: "Sample Video 1",
-          url: playlistUrl,
-          duration: "10:30",
-          thumbnail: ""
-        }
-      ]
-    }],
-    modules: []
+    sections: [
+      {
+        name: "Main Playlist",
+        modules: [
+          {
+            name: "Sample Video 1",
+            url: playlistUrl,
+            duration: "10:30",
+            thumbnail: "",
+          },
+        ],
+      },
+    ],
+    modules: [],
   };
 }
 
-async function handleManualUrls(urlList: string): Promise<CloudCourseStructure> {
+async function handleManualUrls(
+  urlList: string
+): Promise<CloudCourseStructure> {
   // Parse manually entered URLs (one per line)
-  const urls = urlList.split('\n').filter(url => url.trim());
-  
+  const urls = urlList.split("\n").filter((url) => url.trim());
+
   const modules: CloudModule[] = urls.map((url, index) => ({
     name: `Video ${index + 1}`,
     url: url.trim(),
@@ -100,11 +106,11 @@ async function handleManualUrls(urlList: string): Promise<CloudCourseStructure> 
   return {
     name: "Manual URL Course",
     sections: [],
-    modules
+    modules,
   };
 }
 
 function extractPlaylistId(url: string): string {
   const match = url.match(/[?&]list=([^#\&\?]*)/);
-  return match ? match[1] : 'unknown';
+  return match ? match[1] : "unknown";
 }

@@ -30,10 +30,14 @@ interface ManualCourseCreatorProps {
   }) => Promise<boolean>;
 }
 
-export default function ManualCourseCreator({ onAddCourse }: ManualCourseCreatorProps) {
+export default function ManualCourseCreator({
+  onAddCourse,
+}: ManualCourseCreatorProps) {
   const [courseName, setCourseName] = useState("");
   const [courseCategory, setCourseCategory] = useState("Web Development");
-  const [sections, setSections] = useState<{ name: string; videos: string[] }[]>([]);
+  const [sections, setSections] = useState<
+    { name: string; videos: string[] }[]
+  >([]);
   const [error, setError] = useState<string | null>(null);
 
   const addSection = () => {
@@ -58,11 +62,17 @@ export default function ManualCourseCreator({ onAddCourse }: ManualCourseCreator
 
   const removeVideo = (sectionIndex: number, videoIndex: number) => {
     const newSections = [...sections];
-    newSections[sectionIndex].videos = newSections[sectionIndex].videos.filter((_, i) => i !== videoIndex);
+    newSections[sectionIndex].videos = newSections[sectionIndex].videos.filter(
+      (_, i) => i !== videoIndex
+    );
     setSections(newSections);
   };
 
-  const updateVideoName = (sectionIndex: number, videoIndex: number, name: string) => {
+  const updateVideoName = (
+    sectionIndex: number,
+    videoIndex: number,
+    name: string
+  ) => {
     const newSections = [...sections];
     newSections[sectionIndex].videos[videoIndex] = name;
     setSections(newSections);
@@ -86,7 +96,7 @@ export default function ManualCourseCreator({ onAddCourse }: ManualCourseCreator
         setError(`Section ${i + 1} name is required`);
         return;
       }
-      if (section.videos.some(video => !video.trim())) {
+      if (section.videos.some((video) => !video.trim())) {
         setError(`All videos in ${section.name} must have names`);
         return;
       }
@@ -95,9 +105,15 @@ export default function ManualCourseCreator({ onAddCourse }: ManualCourseCreator
     const courseData = {
       title: courseName,
       category: courseCategory,
-      description: `Manually created course with ${sections.reduce((total, section) => total + section.videos.length, 0)} videos across ${sections.length} sections`,
-      totalModules: sections.reduce((total, section) => total + section.videos.length, 0),
-      sections: sections.map(section => ({
+      description: `Manually created course with ${sections.reduce(
+        (total, section) => total + section.videos.length,
+        0
+      )} videos across ${sections.length} sections`,
+      totalModules: sections.reduce(
+        (total, section) => total + section.videos.length,
+        0
+      ),
+      sections: sections.map((section) => ({
         name: section.name,
         path: section.name,
         modules: section.videos.map((video) => ({
@@ -130,7 +146,7 @@ export default function ManualCourseCreator({ onAddCourse }: ManualCourseCreator
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
         Create Course Manually
       </h3>
-      
+
       <div className="space-y-4">
         {/* Course Name */}
         <div>
@@ -172,11 +188,16 @@ export default function ManualCourseCreator({ onAddCourse }: ManualCourseCreator
           </div>
 
           {sections.map((section, sectionIndex) => (
-            <div key={sectionIndex} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
+            <div
+              key={sectionIndex}
+              className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4"
+            >
               <div className="flex justify-between items-center mb-2">
                 <Input
                   value={section.name}
-                  onChange={(e) => updateSectionName(sectionIndex, e.target.value)}
+                  onChange={(e) =>
+                    updateSectionName(sectionIndex, e.target.value)
+                  }
                   placeholder={`Section ${sectionIndex + 1} name`}
                   className="flex-1 mr-2"
                 />
@@ -206,7 +227,13 @@ export default function ManualCourseCreator({ onAddCourse }: ManualCourseCreator
                   <div key={videoIndex} className="flex items-center gap-2">
                     <Input
                       value={video}
-                      onChange={(e) => updateVideoName(sectionIndex, videoIndex, e.target.value)}
+                      onChange={(e) =>
+                        updateVideoName(
+                          sectionIndex,
+                          videoIndex,
+                          e.target.value
+                        )
+                      }
                       placeholder={`Video ${videoIndex + 1} name`}
                       className="flex-1"
                     />
@@ -225,9 +252,7 @@ export default function ManualCourseCreator({ onAddCourse }: ManualCourseCreator
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">
-            {error}
-          </p>
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         )}
 
         <Button

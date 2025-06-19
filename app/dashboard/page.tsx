@@ -21,8 +21,11 @@ export default function Home() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [isLoading, setIsLoading] = useState(true);  const [showScanner, setShowScanner] = useState(false);
-  const [scannerMode, setScannerMode] = useState<'metadata' | 'upload' | 'manual' | 'url'>('metadata');
+  const [isLoading, setIsLoading] = useState(true);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannerMode, setScannerMode] = useState<
+    "metadata" | "upload" | "manual" | "url"
+  >("metadata");
   const [selectedCourseForNotes, setSelectedCourseForNotes] =
     useState<Course | null>(null);
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
@@ -283,7 +286,6 @@ export default function Home() {
 
           <Stats courses={courses} getProgress={getProgress} />
         </div>
-
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 mb-8">
           <button
@@ -313,7 +315,8 @@ export default function Home() {
             <Star size={20} className={showActiveOnly ? "fill-current" : ""} />
             {showActiveOnly ? "Show All Courses" : "Show Active Courses"}
           </button>
-        </div>        {/* Course Scanner */}
+        </div>{" "}
+        {/* Course Scanner */}
         {showScanner && (
           <div className="mb-12">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
@@ -327,75 +330,81 @@ export default function Home() {
                 >
                   ✕
                 </button>
-              </div>              {/* Mode Selection Tabs */}
+              </div>{" "}
+              {/* Mode Selection Tabs */}
               <div className="flex mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                 <button
-                  onClick={() => setScannerMode('metadata')}
+                  onClick={() => setScannerMode("metadata")}
                   className={`flex-1 py-2 px-2 rounded-lg transition-colors text-xs font-medium ${
-                    scannerMode === 'metadata'
-                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    scannerMode === "metadata"
+                      ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
                   ⚡ Metadata Only
                 </button>
                 <button
-                  onClick={() => setScannerMode('upload')}
+                  onClick={() => setScannerMode("upload")}
                   className={`flex-1 py-2 px-2 rounded-lg transition-colors text-xs font-medium ${
-                    scannerMode === 'upload'
-                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    scannerMode === "upload"
+                      ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
                   📁 Upload Files
                 </button>
                 <button
-                  onClick={() => setScannerMode('manual')}
+                  onClick={() => setScannerMode("manual")}
                   className={`flex-1 py-2 px-2 rounded-lg transition-colors text-xs font-medium ${
-                    scannerMode === 'manual'
-                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    scannerMode === "manual"
+                      ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
                   ✏️ Create Manually
                 </button>
                 <button
-                  onClick={() => setScannerMode('url')}
+                  onClick={() => setScannerMode("url")}
                   className={`flex-1 py-2 px-2 rounded-lg transition-colors text-xs font-medium ${
-                    scannerMode === 'url'
-                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    scannerMode === "url"
+                      ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                 >
                   🔗 From URLs
                 </button>
-              </div>              {/* Scanner Content */}
-              {scannerMode === 'metadata' ? (
+              </div>{" "}
+              {/* Scanner Content */}
+              {scannerMode === "metadata" ? (
                 <div>
                   <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                     <p className="text-sm text-green-800 dark:text-green-200">
-                      <strong>Metadata Only:</strong> Reads only file names, sizes, and folder structure - no actual files uploaded.
-                      Perfect for large courses (30-40GB+) as it&apos;s lightning fast and won&apos;t crash your server!
+                      <strong>Metadata Only:</strong> Reads only file names,
+                      sizes, and folder structure - no actual files uploaded.
+                      Perfect for large courses (30-40GB+) as it&apos;s
+                      lightning fast and won&apos;t crash your server!
                     </p>
                   </div>
                   <MetadataCourseScanner onAddCourse={handleAddCourse} />
                 </div>
-              ) : scannerMode === 'upload' ? (
+              ) : scannerMode === "upload" ? (
                 <div>
                   <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                     <p className="text-sm text-blue-800 dark:text-blue-200">
-                      <strong>Upload Mode:</strong> Select a folder containing your course videos. 
-                      This works best in local development and modern browsers that support folder uploads.
+                      <strong>Upload Mode:</strong> Select a folder containing
+                      your course videos. This works best in local development
+                      and modern browsers that support folder uploads.
                     </p>
                   </div>
                   <CourseScanner onAddCourse={handleAddCourse} />
                 </div>
-              ) : scannerMode === 'manual' ? (
+              ) : scannerMode === "manual" ? (
                 <div>
                   <div className="mb-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                     <p className="text-sm text-orange-800 dark:text-orange-200">
-                      <strong>Manual Mode:</strong> Create course structure manually by typing in section and video names. 
-                      This works everywhere, including live deployments.
+                      <strong>Manual Mode:</strong> Create course structure
+                      manually by typing in section and video names. This works
+                      everywhere, including live deployments.
                     </p>
                   </div>
                   <ManualCourseCreator onAddCourse={handleAddCourse} />
@@ -404,8 +413,9 @@ export default function Home() {
                 <div>
                   <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                     <p className="text-sm text-purple-800 dark:text-purple-200">
-                      <strong>URL Mode:</strong> Create courses from video URLs (YouTube, Vimeo, direct links). 
-                      Perfect for online courses and live deployments.
+                      <strong>URL Mode:</strong> Create courses from video URLs
+                      (YouTube, Vimeo, direct links). Perfect for online courses
+                      and live deployments.
                     </p>
                   </div>
                   <URLCourseCreator onAddCourse={handleAddCourse} />
@@ -414,7 +424,6 @@ export default function Home() {
             </div>
           </div>
         )}
-
         {/* Course Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
           {isLoading ? (

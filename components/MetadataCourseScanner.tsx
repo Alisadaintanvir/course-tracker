@@ -51,12 +51,15 @@ interface MetadataCourseScannerProps {
   }) => Promise<boolean>;
 }
 
-export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseScannerProps) {
+export default function MetadataCourseScanner({
+  onAddCourse,
+}: MetadataCourseScannerProps) {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [courseName, setCourseName] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [courseStructure, setCourseStructure] = useState<CourseStructure | null>(null);
+  const [courseStructure, setCourseStructure] =
+    useState<CourseStructure | null>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -68,55 +71,57 @@ export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseSca
     interface DirectoryNode {
       name: string;
       path: string;
-      type: 'directory' | 'file';
+      type: "directory" | "file";
       size?: number;
       lastModified?: Date;
       children?: Record<string, DirectoryNode>;
     }
-    
+
     const structure: Record<string, DirectoryNode> = {};
-    
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const filePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
-      const pathParts = filePath.split('/');
-      
+      const filePath =
+        (file as File & { webkitRelativePath?: string }).webkitRelativePath ||
+        file.name;
+      const pathParts = filePath.split("/");
+
       let current = structure;
-      
+
       // Build nested structure
       for (let j = 0; j < pathParts.length - 1; j++) {
         const part = pathParts[j];
         if (!current[part]) {
           current[part] = {
             name: part,
-            path: pathParts.slice(0, j + 1).join('/'),
-            type: 'directory',
-            children: {}
+            path: pathParts.slice(0, j + 1).join("/"),
+            type: "directory",
+            children: {},
           };
         }
         current = current[part].children!;
       }
-      
+
       // Add the file
       const fileName = pathParts[pathParts.length - 1];
       current[fileName] = {
         name: fileName,
         path: filePath,
-        type: 'file',
+        type: "file",
         size: file.size,
-        lastModified: new Date(file.lastModified)
+        lastModified: new Date(file.lastModified),
       };
-    }    // Convert to array format
+    } // Convert to array format
     function convertToArray(obj: Record<string, DirectoryNode>): unknown[] {
       return Object.values(obj).map((item: DirectoryNode) => {
-        if (item.type === 'directory' && item.children) {
+        if (item.type === "directory" && item.children) {
           return {
             name: item.name,
             path: item.path,
             type: item.type,
             size: item.size,
             lastModified: item.lastModified,
-            children: convertToArray(item.children)
+            children: convertToArray(item.children),
           };
         }
         return {
@@ -124,11 +129,11 @@ export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseSca
           path: item.path,
           type: item.type,
           size: item.size,
-          lastModified: item.lastModified
+          lastModified: item.lastModified,
         };
       });
     }
-    
+
     return convertToArray(structure);
   };
 
@@ -144,10 +149,10 @@ export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseSca
     try {
       // Build directory structure from selected files (metadata only)
       const directoryStructure = buildDirectoryStructure(selectedFiles);
-      
+
       // Send only metadata to the API
       const formData = new FormData();
-      formData.append('metadata', JSON.stringify(directoryStructure));
+      formData.append("metadata", JSON.stringify(directoryStructure));
 
       const response = await fetch("/api/scan-metadata", {
         method: "POST",
@@ -178,7 +183,11 @@ export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseSca
     const courseData = {
       title: courseName || courseStructure.name,
       category: "Web Development",
-      description: `Course with ${courseStructure.totalFiles} videos (${formatFileSize(courseStructure.totalSize)}) across ${courseStructure.sections.length} sections`,
+      description: `Course with ${
+        courseStructure.totalFiles
+      } videos (${formatFileSize(courseStructure.totalSize)}) across ${
+        courseStructure.sections.length
+      } sections`,
       totalModules: courseStructure.totalFiles,
       sections: courseStructure.sections,
       isCompleted: false,
@@ -191,8 +200,10 @@ export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseSca
         setCourseName("");
         setCourseStructure(null);
         // Reset file input
-        const fileInput = document.getElementById('courseFiles') as HTMLInputElement;
-        if (fileInput) fileInput.value = '';
+        const fileInput = document.getElementById(
+          "courseFiles"
+        ) as HTMLInputElement;
+        if (fileInput) fileInput.value = "";
       } else {
         setError("A course with this name already exists");
       }
@@ -219,8 +230,9 @@ export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseSca
             </h3>
           </div>
           <p className="text-sm text-blue-700 dark:text-blue-300">
-            This approach only reads file names, sizes, and folder structure - no actual file content is uploaded.
-            Perfect for large courses (30-40GB+) as it&apos;s lightning fast and uses minimal bandwidth.
+            This approach only reads file names, sizes, and folder structure -
+            no actual file content is uploaded. Perfect for large courses
+            (30-40GB+) as it&apos;s lightning fast and uses minimal bandwidth.
           </p>
         </div>
 
@@ -241,7 +253,8 @@ export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseSca
               className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
             />
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Select a folder containing your course videos. Only file metadata (names, sizes, structure) will be processed - no files uploaded!
+              Select a folder containing your course videos. Only file metadata
+              (names, sizes, structure) will be processed - no files uploaded!
             </p>
             {selectedFiles && selectedFiles.length > 0 && (
               <div className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
@@ -251,7 +264,9 @@ export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseSca
             )}
             <Button
               onClick={handleScan}
-              disabled={isScanning || !selectedFiles || selectedFiles.length === 0}
+              disabled={
+                isScanning || !selectedFiles || selectedFiles.length === 0
+              }
               className="w-full"
             >
               {isScanning ? "Scanning Structure..." : "Scan Course Structure"}
@@ -292,20 +307,36 @@ export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseSca
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Total Videos:</span>
-                  <span className="ml-2 font-medium">{courseStructure.totalFiles}</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Total Videos:
+                  </span>
+                  <span className="ml-2 font-medium">
+                    {courseStructure.totalFiles}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Total Size:</span>
-                  <span className="ml-2 font-medium">{formatFileSize(courseStructure.totalSize)}</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Total Size:
+                  </span>
+                  <span className="ml-2 font-medium">
+                    {formatFileSize(courseStructure.totalSize)}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Sections:</span>
-                  <span className="ml-2 font-medium">{courseStructure.sections.length}</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Sections:
+                  </span>
+                  <span className="ml-2 font-medium">
+                    {courseStructure.sections.length}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-gray-500 dark:text-gray-400">Root Videos:</span>
-                  <span className="ml-2 font-medium">{courseStructure.modules.length}</span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Root Videos:
+                  </span>
+                  <span className="ml-2 font-medium">
+                    {courseStructure.modules.length}
+                  </span>
                 </div>
               </div>
             </div>
@@ -390,10 +421,7 @@ export default function MetadataCourseScanner({ onAddCourse }: MetadataCourseSca
               </div>
             </ScrollArea>
 
-            <Button
-              onClick={handleAddToCourses}
-              className="w-full"
-            >
+            <Button onClick={handleAddToCourses} className="w-full">
               Add to Courses
             </Button>
           </div>
